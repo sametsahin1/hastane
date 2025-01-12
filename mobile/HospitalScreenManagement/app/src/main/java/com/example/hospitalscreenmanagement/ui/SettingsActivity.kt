@@ -79,27 +79,33 @@ class SettingsActivity : AppCompatActivity() {
     private fun loadScreens() {
         lifecycleScope.launch {
             try {
-                val screens = apiService.getScreens()
-                screenList.clear()
-                screenList.addAll(screens)
-
-                val screenNames = if (screens.isEmpty()) {
-                    listOf("Ekran bulunamadı")
+                val response = apiService.getScreens()
+                if (response.isSuccessful) {
+                    val screens = response.body()
+                    if (screens != null) {
+                        screenList.clear()
+                        screenList.addAll(screens)
+                        
+                        val screenNames = screenList.map { it.name }
+                        if (screenNames.isNotEmpty()) {
+                            setupSpinner(screenNames)
+                        } else {
+                            Toast.makeText(this@SettingsActivity, "Ekran listesi boş", Toast.LENGTH_SHORT).show()
+                        }
+                    }
                 } else {
-                    screens.mapNotNull { it.name ?: "İsimsiz Ekran" }
-                }
-
-                runOnUiThread {
-                    spinnerScreens.adapter = createSpinnerAdapter(screenNames)
+                    Toast.makeText(this@SettingsActivity, "Veri alınamadı: ${response.message()}", Toast.LENGTH_SHORT).show()
                 }
             } catch (e: Exception) {
-                val errorMessage = "Ekranlar yüklenirken hata: ${e.message}"
-                Log.e("SettingsActivity", errorMessage, e)
-                runOnUiThread {
-                    spinnerScreens.adapter = createSpinnerAdapter(listOf(errorMessage))
-                    showMessage(errorMessage)
-                }
+                Toast.makeText(this@SettingsActivity, "Hata: ${e.message}", Toast.LENGTH_SHORT).show()
+                Log.e("SettingsActivity", "Hata:", e)
             }
         }
+    }
+
+    private fun setupSpinner(screenNames: List<String>) {
+        val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, screenNames)
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        spinnerScreens.adapter = adapter
     }
 } 
