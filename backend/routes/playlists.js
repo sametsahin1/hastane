@@ -7,22 +7,26 @@ const Media = require('../models/Media');
 // Tüm playlistleri getir
 router.get('/', async (req, res) => {
     try {
-        const playlists = await Playlist.find({}).populate('medias.mediaId');
+        const playlists = await Playlist.find()
+            .populate('medias.mediaId')
+            .sort({ createdAt: -1 });
         return res.json(playlists);
-    } catch (err) {
-        return res.status(500).json({ message: 'Sunucu hatası', error: err });
+    } catch (error) {
+        return res.status(500).json({ message: error.message });
     }
 });
 
 // Yeni playlist (döngü) oluşturma
 router.post('/', async (req, res) => {
     try {
-        const { name } = req.body;
-        const newPlaylist = new Playlist({ name, medias: [] });
-        await newPlaylist.save();
-        return res.status(201).json({ message: 'Döngü oluşturuldu', playlist: newPlaylist });
-    } catch (err) {
-        return res.status(500).json({ message: 'Sunucu hatası', error: err });
+        const playlist = new Playlist({
+            name: req.body.name,
+            medias: req.body.medias
+        });
+        const savedPlaylist = await playlist.save();
+        return res.status(201).json(savedPlaylist);
+    } catch (error) {
+        return res.status(400).json({ message: error.message });
     }
 });
 
@@ -71,6 +75,16 @@ router.delete('/:playlistId/media/:mediaIndex', async (req, res) => {
         return res.json({ message: 'Medya silindi', playlist });
     } catch (err) {
         return res.status(500).json({ message: 'Sunucu hatası', error: err });
+    }
+});
+
+// Playlist silme endpoint'i
+router.delete('/:id', async (req, res) => {
+    try {
+        await Playlist.findByIdAndDelete(req.params.id);
+        res.json({ message: 'Playlist başarıyla silindi' });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
     }
 });
 

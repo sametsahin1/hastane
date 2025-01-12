@@ -15,7 +15,7 @@ const playlistSchema = new mongoose.Schema({
     },
     duration: { 
       type: Number, 
-      default: 10,
+      default: 5,
       min: 1
     }
   }],

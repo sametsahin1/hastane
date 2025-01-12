@@ -3,82 +3,84 @@ const express = require('express');
 const router = express.Router();
 const multer = require('multer');
 const path = require('path');
-const fs = require('fs');
 const Media = require('../models/Media');
 
-// Uploads klasörünü oluştur
-const uploadDir = path.join(__dirname, '../uploads');
-if (!fs.existsSync(uploadDir)) {
-    fs.mkdirSync(uploadDir, { recursive: true });
-}
-
-// Multer konfigürasyonu
+// Multer yapılandırması
 const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        cb(null, uploadDir);
-    },
-    filename: function (req, file, cb) {
-        cb(null, Date.now() + '-' + file.originalname);
-    }
+  destination: function (req, file, cb) {
+    cb(null, path.join(__dirname, '../../uploads')); // uploads klasörüne kaydet
+  },
+  filename: function (req, file, cb) {
+    // Benzersiz dosya adı oluştur
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, uniqueSuffix + path.extname(file.originalname));
+  }
 });
 
 const upload = multer({ 
-    storage: storage,
-    limits: {
-        fileSize: 10 * 1024 * 1024 // 10MB limit
+  storage: storage,
+  limits: {
+    fileSize: 10 * 1024 * 1024 // 10MB limit
+  },
+  fileFilter: function (req, file, cb) {
+    // Kabul edilen dosya tipleri
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'video/mp4', 'video/webm'];
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Desteklenmeyen dosya tipi'));
     }
+  }
 });
 
-// Upload endpoint'i
-router.post('/upload', upload.single('file'), async (req, res) => {
-    try {
-        if (!req.file) {
-            return res.status(400).json({ message: 'Dosya yüklenemedi' });
-        }
-
-        const media = new Media({
-            title: req.body.title,
-            mediaType: req.body.mediaType,
-            filePath: req.file.filename
-        });
-
-        await media.save();
-        res.status(201).json(media);
-    } catch (error) {
-        console.error('Upload error:', error);
-        res.status(500).json({ message: error.message });
-    }
-});
-
-// Medya listeleme
+// Tüm medyaları listele
 router.get('/', async (req, res) => {
-    try {
-        const media = await Media.find();
-        res.json(media);
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
+  try {
+    const medias = await Media.find().sort({ createdAt: -1 });
+    res.json(medias);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 });
 
-// Medya silme
-router.delete('/:id', async (req, res) => {
-    try {
-        const media = await Media.findById(req.params.id);
-        if (!media) {
-            return res.status(404).json({ message: 'Medya bulunamadı' });
-        }
-
-        // Dosyayı fiziksel olarak sil
-        const filePath = path.join(uploadDir, media.filePath);
-        if (fs.existsSync(filePath)) {
-            fs.unlinkSync(filePath);
-        }
-
-        await Media.deleteOne({ _id: req.params.id });
-        res.json({ message: 'Medya silindi' });
-    } catch (error) {
-        res.status(500).json({ message: error.message });
+// Yeni medya yükle
+router.post('/upload', upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'Dosya yüklenemedi' });
     }
+
+    // Dosya yolunu oluştur
+    const filePath = `/uploads/${req.file.filename}`;
+
+    // Yeni medya belgesi oluştur
+    const media = new Media({
+      name: req.body.name,
+      mediaType: req.body.mediaType,
+      filePath: filePath,
+      duration: req.body.duration || 5 // Varsayılan süre 5 saniye
+    });
+
+    const savedMedia = await media.save();
+    res.status(201).json(savedMedia);
+
+  } catch (error) {
+    console.error('Upload error:', error);
+    res.status(500).json({ 
+      message: 'Medya yüklenirken hata oluştu',
+      error: error.message 
+    });
+  }
+});
+
+// Medya sil
+router.delete('/:id', async (req, res) => {
+  try {
+    await Media.findByIdAndDelete(req.params.id);
+    res.json({ message: 'Medya silindi' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 });
 
 module.exports = router;

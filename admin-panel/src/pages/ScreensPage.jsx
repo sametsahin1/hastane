@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { Link } from 'react-router-dom';
 
 function ScreenPage() {
   const [screenName, setScreenName] = useState('');
@@ -17,7 +18,11 @@ function ScreenPage() {
   };
 
   const addScreen = () => {
-    axios.post('http://localhost:3000/screens', { screenName, location })
+    axios.post('http://localhost:3000/screens', {
+      name: screenName,
+      location: location,
+      status: 'active'
+    })
       .then(res => {
         alert('Ekran eklendi');
         setScreenName('');
@@ -62,19 +67,25 @@ function ScreenPage() {
             <th>Ad</th>
             <th>Lokasyon</th>
             <th>Aktif Mi</th>
-            <th>Değiştir</th>
+            <th>Mevcut Playlist</th>
+            <th>İşlemler</th>
+            <th>Önizleme</th>
           </tr>
         </thead>
         <tbody>
           {screens.map(s => (
             <tr key={s._id}>
-              <td>{s.screenName}</td>
+              <td>{s.name}</td>
               <td>{s.location}</td>
-              <td>{s.isActive ? 'Evet' : 'Hayır'}</td>
+              <td>{s.status === 'active' ? 'Evet' : 'Hayır'}</td>
+              <td>{s.currentPlaylist ? s.currentPlaylist.name : 'Atanmamış'}</td>
               <td>
-                <button onClick={() => toggleActive(s._id, s.isActive)}>
+                <button onClick={() => toggleActive(s._id, s.status)}>
                   Aktif/Pasif Değiştir
                 </button>
+              </td>
+              <td>
+                <Link to={`/preview/${s._id}`}>Önizle</Link>
               </td>
             </tr>
           ))}

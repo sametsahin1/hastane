@@ -2,79 +2,126 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
 function AssignmentPage() {
-  const [playlists, setPlaylists] = useState([]);
   const [screens, setScreens] = useState([]);
+  const [playlists, setPlaylists] = useState([]);
+  const [selectedScreen, setSelectedScreen] = useState('');
   const [selectedPlaylist, setSelectedPlaylist] = useState('');
-  const [selectedScreens, setSelectedScreens] = useState([]);
 
   useEffect(() => {
-    axios.get('http://localhost:3000/playlists')
-      .then(res => setPlaylists(res.data))
-      .catch(err => console.error(err));
-
-    axios.get('http://localhost:3000/screens')
-      .then(res => setScreens(res.data))
-      .catch(err => console.error(err));
+    fetchScreens();
+    fetchPlaylists();
   }, []);
 
-  const handleScreenCheckbox = (screenId) => {
-    if (selectedScreens.includes(screenId)) {
-      // varsa çıkar
-      setSelectedScreens(selectedScreens.filter(id => id !== screenId));
-    } else {
-      // yoksa ekle
-      setSelectedScreens([...selectedScreens, screenId]);
+  const fetchScreens = async () => {
+    try {
+      const response = await axios.get('http://localhost:3000/screens');
+      setScreens(response.data);
+    } catch (error) {
+      console.error('Ekranlar yüklenirken hata:', error);
     }
   };
 
-  const assignPlaylist = () => {
-    if (!selectedPlaylist || selectedScreens.length === 0) {
-      alert('Playlist ve ekran seçin');
+  const fetchPlaylists = async () => {
+    try {
+      const response = await axios.get('http://localhost:3000/playlists');
+      setPlaylists(response.data);
+    } catch (error) {
+      console.error('Playlistler yüklenirken hata:', error);
+    }
+  };
+
+  const handleAssignment = async () => {
+    if (!selectedScreen || !selectedPlaylist) {
+      alert('Lütfen ekran ve playlist seçin');
       return;
     }
-    axios.post('http://localhost:3000/assignments', {
-      playlistId: selectedPlaylist,
-      screenIds: selectedScreens
-    })
-      .then(res => {
-        alert('Atama yapıldı');
-        setSelectedPlaylist('');
-        setSelectedScreens([]);
-      })
-      .catch(err => console.error(err));
+
+    try {
+      await axios.post('http://localhost:3000/assignments', {
+        screenId: selectedScreen,
+        playlistId: selectedPlaylist
+      });
+      
+      alert('Atama başarıyla yapıldı');
+      fetchScreens(); // Ekranları yenile
+    } catch (error) {
+      console.error('Atama yapılırken hata:', error);
+      alert('Atama yapılırken bir hata oluştu');
+    }
   };
 
   return (
     <div style={{ margin: '20px' }}>
-      <h2>Döngüleri Ekranlara Atama</h2>
-      <div>
-        <label>Seçilecek Döngü: </label>
-        <select
-          value={selectedPlaylist}
-          onChange={(e) => setSelectedPlaylist(e.target.value)}
+      <h2>Ekran-Playlist Atama</h2>
+      <div style={styles.form}>
+        <div style={styles.formGroup}>
+          <label>Ekran Seçin:</label>
+          <select 
+            value={selectedScreen}
+            onChange={(e) => setSelectedScreen(e.target.value)}
+            style={styles.select}
+          >
+            <option value="">Seçin...</option>
+            {screens.map(screen => (
+              <option key={screen._id} value={screen._id}>
+                {screen.name} {screen.currentPlaylist ? `(Mevcut: ${screen.currentPlaylist.name})` : '(Atanmamış)'}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div style={styles.formGroup}>
+          <label>Playlist Seçin:</label>
+          <select 
+            value={selectedPlaylist}
+            onChange={(e) => setSelectedPlaylist(e.target.value)}
+            style={styles.select}
+          >
+            <option value="">Seçin...</option>
+            {playlists.map(playlist => (
+              <option key={playlist._id} value={playlist._id}>
+                {playlist.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <button 
+          onClick={handleAssignment}
+          style={styles.button}
         >
-          <option value="">Seç...</option>
-          {playlists.map(pl => (
-            <option key={pl._id} value={pl._id}>{pl.name}</option>
-          ))}
-        </select>
+          Ata
+        </button>
       </div>
-      <div>
-        <h3>Ekranlar</h3>
-        {screens.map(s => (
-          <div key={s._id}>
-            <input
-              type="checkbox"
-              checked={selectedScreens.includes(s._id)}
-              onChange={() => handleScreenCheckbox(s._id)}
-            />
-            {s.screenName} ({s.location})
-          </div>
-        ))}
-      </div>
-      <button onClick={assignPlaylist}>Kaydet</button>
     </div>
   );
 }
+
+const styles = {
+  form: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '20px',
+    maxWidth: '500px',
+    margin: '20px 0'
+  },
+  formGroup: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '5px'
+  },
+  select: {
+    padding: '8px',
+    fontSize: '16px'
+  },
+  button: {
+    padding: '10px',
+    backgroundColor: '#007bff',
+    color: 'white',
+    border: 'none',
+    borderRadius: '4px',
+    cursor: 'pointer'
+  }
+};
 
 export default AssignmentPage;
