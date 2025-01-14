@@ -285,9 +285,67 @@ h2 {
 }
 h3 {
   font-size: 1.3rem;
-  color: var(--secondary-color);
+  color: var(--primary-color);
   margin-top: 1.5rem;
   margin-bottom: 0.5rem;
+}
+.input-playlisth3{
+  margin: 0;
+}
+
+.input-playlist{
+  display: flex
+;
+    align-items: center;
+}
+
+.input-screen-name{
+  height: 3em;
+  border-radius: 0.3em;
+  border: gray 1px solid;
+  padding-left: 0.5em;
+}
+.input-screen-buttona{
+  text-decoration: none;
+  color: white;
+  background: var(--primary-color);
+  width: 4em;
+  display: flex
+;
+  text-align: center;
+  align-items: center;
+  justify-content: center;
+  height: 1.9em;
+  font-weight: bold;
+  border-radius: 0.3em;
+  font-size: 0.9em;
+}
+
+.input-screen-buttonared{
+  text-decoration: none;
+  color: white;
+  background: red;
+  width: 4em;
+  display: flex
+;
+  text-align: center;
+  align-items: center;
+  justify-content: center;
+  height: 1.9em;
+  font-weight: bold;
+  border-radius: 0.3em;
+  font-size: 0.9em;
+}
+.input-screen-button{
+font-weight: bold;
+}
+
+.input-screen-container{
+  display: flex
+  ;
+      gap: 1em;
+      align-items: center;
+      height: 3em;
 }
 
 /*************************************************************

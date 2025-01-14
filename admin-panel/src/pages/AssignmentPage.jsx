@@ -4,7 +4,7 @@ import axios from 'axios';
 function AssignmentPage() {
   const [screens, setScreens] = useState([]);
   const [playlists, setPlaylists] = useState([]);
-  const [selectedScreen, setSelectedScreen] = useState('');
+  const [selectedScreens, setSelectedScreens] = useState([]);
   const [selectedPlaylist, setSelectedPlaylist] = useState('');
 
   useEffect(() => {
@@ -17,7 +17,7 @@ function AssignmentPage() {
       const response = await axios.get('http://localhost:3000/screens');
       setScreens(response.data);
     } catch (error) {
-      console.error('Ekranlar yüklenirken hata:', error);
+      console.error('Ekran listesi alınırken hata:', error);
     }
   };
 
@@ -26,101 +26,139 @@ function AssignmentPage() {
       const response = await axios.get('http://localhost:3000/playlists');
       setPlaylists(response.data);
     } catch (error) {
-      console.error('Playlistler yüklenirken hata:', error);
+      console.error('Playlist listesi alınırken hata:', error);
     }
   };
 
-  const handleAssignment = async () => {
-    if (!selectedScreen || !selectedPlaylist) {
-      alert('Lütfen ekran ve playlist seçin');
+  const handleScreenSelect = (screenId) => {
+    setSelectedScreens(prevSelected =>
+      prevSelected.includes(screenId)
+        ? prevSelected.filter(id => id !== screenId)
+        : [...prevSelected, screenId]
+    );
+  };
+
+  const assignPlaylistToSelectedScreens = async () => {
+    if (!selectedPlaylist) {
+      alert('Lütfen bir playlist seçin');
       return;
     }
 
     try {
-      await axios.post('http://localhost:3000/assignments', {
-        screenId: selectedScreen,
-        playlistId: selectedPlaylist
-      });
-      
-      alert('Atama başarıyla yapıldı');
-      fetchScreens(); // Ekranları yenile
+      await Promise.all(selectedScreens.map(screenId =>
+        axios.put(`http://localhost:3000/screens/${screenId}`, {
+          currentPlaylist: selectedPlaylist
+        })
+      ));
+      alert('Playlist başarıyla atandı');
+      fetchScreens();
     } catch (error) {
-      console.error('Atama yapılırken hata:', error);
-      alert('Atama yapılırken bir hata oluştu');
+      console.error('Playlist atama hatası:', error);
+    }
+  };
+
+  const assignPlaylistToAllScreens = async () => {
+    if (!selectedPlaylist) {
+      alert('Lütfen bir playlist seçin');
+      return;
+    }
+
+    try {
+      await Promise.all(screens.map(screen =>
+        axios.put(`http://localhost:3000/screens/${screen._id}`, {
+          currentPlaylist: selectedPlaylist
+        })
+      ));
+      alert('Playlist tüm ekranlara başarıyla atandı');
+      fetchScreens();
+    } catch (error) {
+      console.error('Playlist atama hatası:', error);
     }
   };
 
   return (
     <div style={{ margin: '20px' }}>
       <h2>Ekran-Playlist Atama</h2>
-      <div style={styles.form}>
-        <div style={styles.formGroup}>
-          <label>Ekran Seçin:</label>
-          <select 
-            value={selectedScreen}
-            onChange={(e) => setSelectedScreen(e.target.value)}
-            style={styles.select}
-          >
-            <option value="">Seçin...</option>
-            {screens.map(screen => (
-              <option key={screen._id} value={screen._id}>
-                {screen.name} {screen.currentPlaylist ? `(Mevcut: ${screen.currentPlaylist.name})` : '(Atanmamış)'}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div style={styles.formGroup}>
-          <label>Playlist Seçin:</label>
-          <select 
-            value={selectedPlaylist}
-            onChange={(e) => setSelectedPlaylist(e.target.value)}
-            style={styles.select}
-          >
-            <option value="">Seçin...</option>
-            {playlists.map(playlist => (
-              <option key={playlist._id} value={playlist._id}>
-                {playlist.name}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <button 
-          onClick={handleAssignment}
-          style={styles.button}
+      <div style={styles.selector}>
+        <h3>Playlist Seç</h3>
+        <select
+          onChange={(e) => setSelectedPlaylist(e.target.value)}
+          value={selectedPlaylist}
+          style={styles.select}
         >
-          Ata
-        </button>
+          <option value="">Playlist seçin...</option>
+          {playlists.map(playlist => (
+            <option key={playlist._id} value={playlist._id}>
+              {playlist.name}
+            </option>
+          ))}
+        </select>
       </div>
+
+      <h3>Ekranlar</h3>
+      <div style={styles.screenList}>
+        {screens.map(screen => (
+          <div key={screen._id} style={styles.screenItem}>
+            <input
+              type="checkbox"
+              checked={selectedScreens.includes(screen._id)}
+              onChange={() => handleScreenSelect(screen._id)}
+              style={styles.checkbox}
+            />
+            <label style={styles.label}>{screen.name}</label>
+          </div>
+        ))}
+      </div>
+
+      <button onClick={assignPlaylistToSelectedScreens} style={styles.button}>
+        Seçilen Ekranlara Ata
+      </button>
+      <button onClick={assignPlaylistToAllScreens} style={styles.button}>
+        Tüm Ekranlara Ata
+      </button>
     </div>
   );
 }
 
 const styles = {
-  form: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '20px',
-    maxWidth: '500px',
-    margin: '20px 0'
-  },
-  formGroup: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '5px'
+  selector: {
+    marginBottom: '20px'
   },
   select: {
     padding: '8px',
+    fontSize: '16px',
+    minWidth: '200px'
+  },
+  screenList: {
+    display: 'flex',
+    marginBottom: '20px',
+    maxHeight: '300px',
+    overflowY: 'auto',
+    border: '1px solid rgb(204, 204, 204)',
+    padding: '10px',
+    borderRadius: '5px',
+    alignItems: 'center',
+    gap: '40px'
+  },
+  screenItem: {
+    display: 'flex',
+    alignItems: 'center',
+    marginBottom: '10px'
+  },
+  checkbox: {
+    marginRight: '10px'
+  },
+  label: {
     fontSize: '16px'
   },
   button: {
-    padding: '10px',
+    padding: '10px 20px',
     backgroundColor: '#007bff',
     color: 'white',
     border: 'none',
-    borderRadius: '4px',
-    cursor: 'pointer'
+    borderRadius: '5px',
+    cursor: 'pointer',
+    marginRight: '10px'
   }
 };
 

@@ -70,7 +70,6 @@ function PlaylistsPage() {
         name: playlistName,
         medias: mediaData
       });
-      alert('Playlist başarıyla oluşturuldu');
       setPlaylistName('');
       setSelectedMedias([]);
       fetchPlaylists();
@@ -83,15 +82,11 @@ function PlaylistsPage() {
   };
 
   const handleDeletePlaylist = async (playlistId) => {
-    if (window.confirm('Bu döngüyü silmek istediğinizden emin misiniz?')) {
-      try {
-        await axios.delete(`http://localhost:3000/playlists/${playlistId}`);
-        alert('Döngü başarıyla silindi');
-        fetchPlaylists();
-      } catch (error) {
-        console.error('Döngü silme hatası:', error);
-        alert('Döngü silinirken bir hata oluştu');
-      }
+    try {
+      await axios.delete(`http://localhost:3000/playlists/${playlistId}`);
+      fetchPlaylists();
+    } catch (error) {
+      console.error('Döngü silme hatası:', error);
     }
   };
 
@@ -99,16 +94,18 @@ function PlaylistsPage() {
     <div style={{ margin: '20px' }}>
       <h2>Döngü Oluşturma</h2>
       <div style={styles.form}>
+        <div className='input-playlist'>
         <input
           type="text"
           placeholder="Döngü Adı"
           value={playlistName}
           onChange={(e) => setPlaylistName(e.target.value)}
           style={styles.input}
+
         />
 
         <div style={styles.mediaSelector}>
-          <h3>Medya Seç</h3>
+          <h3 className='input-playlisth3'>Medya Seç</h3>
           <select 
             onChange={(e) => handleMediaSelect(e.target.value)}
             value=""
@@ -122,6 +119,8 @@ function PlaylistsPage() {
             ))}
           </select>
         </div>
+        </div>
+
 
         <div style={styles.selectedMedias}>
           <h3>Seçilen Medyalar</h3>
@@ -213,15 +212,20 @@ const styles = {
   input: {
     padding: '8px',
     fontSize: '16px',
-    maxWidth: '300px'
+    maxWidth: '300px',
+    marginBottom: '0px'
   },
   mediaSelector: {
-    marginBottom: '20px'
+   display: 'flex',
+   alignItems: 'center',
+   gap: '8px',
+   marginLeft: '1em'
   },
   select: {
     padding: '8px',
     fontSize: '16px',
-    minWidth: '300px'
+    minWidth: '300px',
+    marginBottom: '0px'
   },
   table: {
     width: '100%',
@@ -242,9 +246,9 @@ const styles = {
   },
   createButton: {
     padding: '10px',
-    backgroundColor: '#28a745',
     color: 'white',
     border: 'none',
+    fontWeight: 'bold',
     borderRadius: '4px',
     cursor: 'pointer',
     maxWidth: '200px'

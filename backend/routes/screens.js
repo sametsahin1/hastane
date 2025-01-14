@@ -75,4 +75,30 @@ router.get('/:screenId/config', async (req, res) => {
   }
 });
 
+// Ekran silme endpoint'i
+router.delete('/:id', async (req, res) => {
+  try {
+    const screen = await Screen.findByIdAndDelete(req.params.id);
+    if (!screen) {
+      return res.status(404).send({ message: 'Ekran bulunamadı' });
+    }
+    res.status(200).send({ message: 'Ekran başarıyla silindi' });
+  } catch (error) {
+    res.status(500).send({ message: 'Ekran silinirken bir hata oluştu', error });
+  }
+});
+
+// PUT - Ekran güncelleme
+router.put('/:id', async (req, res) => {
+  try {
+    const screen = await Screen.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    if (!screen) {
+      return res.status(404).send({ message: 'Ekran bulunamadı' });
+    }
+    res.status(200).send(screen);
+  } catch (error) {
+    res.status(500).send({ message: 'Ekran güncellenirken bir hata oluştu', error });
+  }
+});
+
 module.exports = router;

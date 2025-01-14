@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
 
-function ScreenPage() {
+function ScreensPage() {
   const [screenName, setScreenName] = useState('');
   const [location, setLocation] = useState('');
   const [screens, setScreens] = useState([]);
@@ -11,81 +11,84 @@ function ScreenPage() {
     fetchScreens();
   }, []);
 
-  const fetchScreens = () => {
-    axios.get('http://localhost:3000/screens')
-      .then(res => setScreens(res.data))
-      .catch(err => console.error(err));
+  const fetchScreens = async () => {
+    try {
+      const response = await axios.get('http://localhost:3000/screens');
+      setScreens(response.data);
+    } catch (error) {
+      console.error('Ekran listesi alınırken hata:', error);
+    }
   };
 
-  const addScreen = () => {
-    axios.post('http://localhost:3000/screens', {
-      name: screenName,
-      location: location,
-      status: 'active'
-    })
-      .then(res => {
-        alert('Ekran eklendi');
-        setScreenName('');
-        setLocation('');
-        fetchScreens();
-      })
-      .catch(err => console.error(err));
+  const addScreen = async () => {
+    try {
+      await axios.post('http://localhost:3000/screens', {
+        name: screenName,
+        location: location,
+        status: 'active'
+      });
+      setScreenName('');
+      setLocation('');
+      fetchScreens();
+    } catch (error) {
+      console.error('Ekran ekleme hatası:', error);
+    }
   };
 
-  const toggleActive = (id, currentActive) => {
-    axios.put(`http://localhost:3000/screens/${id}`, {
-      isActive: !currentActive
-    })
-      .then(res => {
-        alert('Ekran güncellendi');
-        fetchScreens();
-      })
-      .catch(err => console.error(err));
+  const handleDeleteScreen = async (screenId) => {
+    try {
+      await axios.delete(`http://localhost:3000/screens/${screenId}`);
+      fetchScreens(); // Silme işleminden sonra listeyi güncelle
+    } catch (error) {
+      console.error('Ekran silme hatası:', error);
+    }
   };
 
   return (
     <div style={{ margin: '20px' }}>
       <h2>Ekran Ekleme/Listeme</h2>
-      <div>
+      <div className='input-screen-container'>
         <input
+          className='input-screen-name'
           placeholder="Ekran Adı"
           value={screenName}
           onChange={(e) => setScreenName(e.target.value)}
         />
         <input
+          className='input-screen-name'
           placeholder="Lokasyon"
           value={location}
           onChange={(e) => setLocation(e.target.value)}
         />
-        <button onClick={addScreen}>Ekle</button>
+        <button className='input-screen-button' onClick={addScreen}>Ekle</button>
       </div>
-      <hr />
       <h3>Tüm Ekranlar</h3>
-      <table border="1" cellPadding="5">
+      <table style={styles.table}>
         <thead>
           <tr>
             <th>Ad</th>
             <th>Lokasyon</th>
-            <th>Aktif Mi</th>
             <th>Mevcut Playlist</th>
             <th>İşlemler</th>
             <th>Önizleme</th>
           </tr>
         </thead>
         <tbody>
-          {screens.map(s => (
-            <tr key={s._id}>
-              <td>{s.name}</td>
-              <td>{s.location}</td>
-              <td>{s.status === 'active' ? 'Evet' : 'Hayır'}</td>
-              <td>{s.currentPlaylist ? s.currentPlaylist.name : 'Atanmamış'}</td>
+          {screens.map(screen => (
+            <tr key={screen._id}>
+              <td>{screen.name}</td>
+              <td>{screen.location}</td>
+              <td>{screen.currentPlaylist ? screen.currentPlaylist.name : 'Atanmamış'}</td>
               <td>
-                <button onClick={() => toggleActive(s._id, s.status)}>
-                  Aktif/Pasif Değiştir
+                <button className='input-screen-buttonared'
+                  onClick={() => handleDeleteScreen(screen._id)}
+                  style={styles.deleteButton}
+                >
+                  Sil
                 </button>
               </td>
               <td>
-                <Link to={`/preview/${s._id}`}>Önizle</Link>
+                <Link className='input-screen-buttona' to={`/preview/${screen._id}`}>Önizle</Link>
               </td>
             </tr>
           ))}
@@ -95,4 +98,20 @@ function ScreenPage() {
   );
 }
 
-export default ScreenPage;
+const styles = {
+  table: {
+    width: '100%',
+    borderCollapse: 'collapse',
+    marginTop: '20px'
+  },
+  deleteButton: {
+    padding: '5px 10px',
+    backgroundColor: '#dc3545',
+    color: 'white',
+    border: 'none',
+    borderRadius: '4px',
+    cursor: 'pointer'
+  }
+};
+
+export default ScreensPage;
