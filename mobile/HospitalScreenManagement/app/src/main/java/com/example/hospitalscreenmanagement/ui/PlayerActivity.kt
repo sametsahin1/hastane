@@ -37,10 +37,6 @@ class PlayerActivity : AppCompatActivity() {
     }
 
     private fun setupVideoView() {
-        val mediaController = MediaController(this)
-        mediaController.setAnchorView(videoView)
-        videoView.setMediaController(mediaController)
-        
         videoView.setOnCompletionListener {
             playNextMedia()
         }
@@ -93,7 +89,10 @@ class PlayerActivity : AppCompatActivity() {
                 videoView.visibility = View.VISIBLE
                 val videoUrl = baseUrl + currentMedia.filePath
                 videoView.setVideoURI(Uri.parse(videoUrl))
-                videoView.start()
+                videoView.setOnPreparedListener { mediaPlayer ->
+                    mediaPlayer.isLooping = true
+                    videoView.start()
+                }
             }
         }
     }
