@@ -2,7 +2,7 @@ services:
   mongo:
     image: mongo:latest
     container_name: hastane-mongo
-    # Bu port mapping'i istersen koymayabilirsin. Koyunca host tarafında 27018 -> container:27017
+    # Host'ta 27018'e map'liyoruz, sadece istersen kontrol/test amaçlı
     ports:
       - "27018:27017"
 
@@ -16,7 +16,8 @@ services:
     depends_on:
       - mongo
     environment:
-      # Mongo'ya container ismi "mongo" üzerinden bağlanacağız
+      # DİKKAT: Mongo'ya "mongo" servisi üzerinden, 27017 portundan bağlanacağız.
+      # 'hastane_sistemi' de senin veritabanının ismi.
       MONGO_URI: "mongodb://mongo:27017/hastane_sistemi"
 
   frontend:
