@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import Notification from '../components/Notification';
 
 function AssignmentPage() {
   const [screens, setScreens] = useState([]);
   const [playlists, setPlaylists] = useState([]);
   const [selectedScreens, setSelectedScreens] = useState([]);
   const [selectedPlaylist, setSelectedPlaylist] = useState('');
+  const [notification, setNotification] = useState('');
 
   useEffect(() => {
     fetchScreens();
@@ -50,7 +52,7 @@ function AssignmentPage() {
           currentPlaylist: selectedPlaylist
         })
       ));
-      alert('Playlist başarıyla atandı');
+      setNotification('Playlist başarıyla atandı');
       fetchScreens();
     } catch (error) {
       console.error('Playlist atama hatası:', error);
@@ -69,7 +71,7 @@ function AssignmentPage() {
           currentPlaylist: selectedPlaylist
         })
       ));
-      alert('Playlist tüm ekranlara başarıyla atandı');
+      setNotification('Playlist tüm ekranlara başarıyla atandı');
       fetchScreens();
     } catch (error) {
       console.error('Playlist atama hatası:', error);
@@ -116,6 +118,8 @@ function AssignmentPage() {
       <button onClick={assignPlaylistToAllScreens} style={styles.button}>
         Tüm Ekranlara Ata
       </button>
+
+      <Notification message={notification} onClose={() => setNotification('')} />
     </div>
   );
 }
@@ -149,7 +153,8 @@ const styles = {
     marginRight: '10px'
   },
   label: {
-    fontSize: '16px'
+    fontSize: '16px',
+    margin: '0px'
   },
   button: {
     padding: '10px 20px',

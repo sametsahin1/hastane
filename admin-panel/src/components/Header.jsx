@@ -18,7 +18,7 @@ function Header() {
       </nav>
 
       <div className="header-user">
-        <a href="/login" className="login-btn">Giriş Yap</a>
+        <a href="/" className="login-btn">Giriş Yap</a>
         {/* Eğer kullanıcı login olmuşsa, Giriş Yap yerine profil/log-out gösterirsiniz */}
       </div>
     </header>

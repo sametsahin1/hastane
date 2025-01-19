@@ -1,24 +1,25 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 
-function LoginPage() {
+function RegisterPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
 
-  const handleLogin = () => {
-    axios.post('http://localhost:3000/auth/login', { username, password })
+  const handleRegister = () => {
+    axios.post('http://localhost:3000/auth/register', { username, password })
       .then((res) => {
+        alert('Kayıt Başarılı');
         localStorage.setItem('token', res.data.token);
         window.location.href = '/media';
       })
       .catch((err) => {
-        alert('Giriş hatalı: ' + err.response.data.message);
+        alert('Kayıt hatalı: ' + err.response.data.message);
       });
   };
 
   return (
     <div style={styles.container}>
-      <h2 style={styles.title}>Login Sayfası</h2>
+      <h2 style={styles.title}>Kayıt Sayfası</h2>
       <div style={styles.inputGroup}>
         <label style={styles.label}>Kullanıcı Adı: </label>
         <input
@@ -36,7 +37,7 @@ function LoginPage() {
           style={styles.input}
         />
       </div>
-      <button onClick={handleLogin} style={styles.button}>Giriş</button>
+      <button onClick={handleRegister} style={styles.button}>Kayıt Ol</button>
     </div>
   );
 }
@@ -87,4 +88,4 @@ const styles = {
   },
 };
 
-export default LoginPage;
+export default RegisterPage; 

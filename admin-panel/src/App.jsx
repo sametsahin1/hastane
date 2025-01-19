@@ -8,6 +8,7 @@ import PlaylistPage from './pages/PlaylistsPage';
 import ScreenPage from './pages/ScreensPage';
 import AssignmentPage from './pages/AssignmentPage';
 import PreviewPage from './pages/PreviewPage';
+import RegisterPage from './pages/RegisterPage';
 import Header from './components/Header';
 
 function App() {
@@ -21,6 +22,7 @@ function App() {
         <Route path="/screens" element={<ScreenPage />} />
         <Route path="/assign" element={<AssignmentPage />} />
         <Route path="/preview/:screenId" element={<PreviewPage />} />
+        <Route path="/register" element={<RegisterPage />} />
       </Routes>
     </Router>
   );
