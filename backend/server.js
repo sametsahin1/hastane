@@ -33,11 +33,11 @@ const playlistRoutes = require('./routes/playlists');
 const screenRoutes = require('./routes/screens');
 const assignmentRoutes = require('./routes/assignments');
 
-app.use('/auth', authRoutes);
-app.use('/media', mediaRoutes);
-app.use('/playlists', playlistRoutes);
-app.use('/screens', screenRoutes);
-app.use('/assignments', assignmentRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/media', mediaRoutes);
+app.use('/api/playlists', playlistRoutes);
+app.use('/api/screens', screenRoutes);
+app.use('/api/assignments', assignmentRoutes);
 
 // Basit test
 app.get('/', (req, res) => {
