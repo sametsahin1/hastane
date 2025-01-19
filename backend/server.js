@@ -21,7 +21,6 @@ const uploadsDir = path.join(__dirname, '../uploads');
 if (!fs.existsSync(uploadsDir)){
     fs.mkdirSync(uploadsDir, { recursive: true });
 }
-
 // uploads klasörünü statik olarak serve et
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 

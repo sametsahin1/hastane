@@ -120,13 +120,13 @@ function MediaPage() {
               <td style={styles.previewCell}>
                 {media.mediaType === 'image' ? (
                   <img 
-                    src={`/api:3000${media.filePath}`}
+                    src={media.filePath}
                     alt={media.name}
                     style={styles.preview}
                   />
                 ) : (
                   <video 
-                    src={`/api:3000${media.filePath}`}
+                    src={media.filePath}
                     style={styles.preview}
                   />
                 )}
