@@ -44,7 +44,7 @@ router.get('/', async (req, res) => {
 });
 
 // Yeni medya yükle
-router.post('../../uploads', upload.single('file'), async (req, res) => {
+router.post('/upload', upload.single('file'), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ message: 'Dosya yüklenemedi' });
