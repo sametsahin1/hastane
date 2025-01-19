@@ -22,9 +22,9 @@ if (!fs.existsSync(uploadsDir)){
     fs.mkdirSync(uploadsDir, { recursive: true });
 }
 // uploads klasörünü statik olarak serve et
-app.use('/uploads', express.static(path.join(__dirname, '../../uploads')));
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
-console.log('Uploads tam yolu:', path.join(__dirname, '../../uploads'));
+console.log('Uploads tam yolu:', path.join(__dirname, '../uploads'));
 // Rota dosyaları
 const authRoutes = require('./routes/auth');
 const mediaRoutes = require('./routes/media');
