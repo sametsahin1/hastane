@@ -6,7 +6,7 @@ function RegisterPage() {
   const [password, setPassword] = useState('');
 
   const handleRegister = () => {
-    axios.post('http://localhost:3000/auth/register', { username, password })
+    axios.post('/api/auth/register', { username, password })
       .then((res) => {
         alert('Kayıt Başarılı');
         localStorage.setItem('token', res.data.token);

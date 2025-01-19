@@ -13,7 +13,7 @@ function ScreensPage() {
 
   const fetchScreens = async () => {
     try {
-      const response = await axios.get('http://localhost:3000/screens');
+      const response = await axios.get('/api/screens');
       setScreens(response.data);
     } catch (error) {
       console.error('Ekran listesi alınırken hata:', error);
@@ -22,7 +22,7 @@ function ScreensPage() {
 
   const addScreen = async () => {
     try {
-      await axios.post('http://localhost:3000/screens', {
+      await axios.post('/api/screens', {
         name: screenName,
         location: location,
         status: 'active'
@@ -37,7 +37,7 @@ function ScreensPage() {
 
   const handleDeleteScreen = async (screenId) => {
     try {
-      await axios.delete(`http://localhost:3000/screens/${screenId}`);
+      await axios.delete(`/api/screens/${screenId}`);
       fetchScreens(); // Silme işleminden sonra listeyi güncelle
     } catch (error) {
       console.error('Ekran silme hatası:', error);

@@ -15,7 +15,7 @@ function PreviewPage() {
 
   const fetchScreenConfig = async () => {
     try {
-      const response = await axios.get(`http://localhost:3000/screens/${screenId}/config`);
+      const response = await axios.get(`/api/screens/${screenId}/config`);
       if (response.data.playlist) {
         setPlaylist(response.data.playlist);
       } else {
@@ -54,13 +54,13 @@ function PreviewPage() {
         {currentMedia ? (
           currentMedia.mediaType === 'image' ? (
             <img 
-              src={`http://localhost:3000${currentMedia.filePath}`}
+              src={`/api${currentMedia.filePath}`}
               alt="Media content"
               style={styles.media}
             />
           ) : currentMedia.mediaType === 'video' ? (
             <video 
-              src={`http://localhost:3000${currentMedia.filePath}`}
+              src={`/api${currentMedia.filePath}`}
               autoPlay
               muted
               style={styles.media}

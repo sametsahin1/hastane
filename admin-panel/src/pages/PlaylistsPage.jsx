@@ -15,7 +15,7 @@ function PlaylistsPage() {
 
   const fetchMedias = async () => {
     try {
-      const response = await axios.get('http://localhost:3000/media');
+      const response = await axios.get('/api/media');
       setAvailableMedias(response.data);
     } catch (error) {
       console.error('Medya listesi alınırken hata:', error);
@@ -24,7 +24,7 @@ function PlaylistsPage() {
 
   const fetchPlaylists = async () => {
     try {
-      const response = await axios.get('http://localhost:3000/playlists');
+      const response = await axios.get('/api/playlists');
       setPlaylists(response.data);
     } catch (error) {
       console.error('Playlist listesi alınırken hata:', error);
@@ -66,7 +66,7 @@ function PlaylistsPage() {
         duration: media.duration
       }));
 
-      await axios.post('http://localhost:3000/playlists', {
+      await axios.post('/api/playlists', {
         name: playlistName,
         medias: mediaData
       });
@@ -83,7 +83,7 @@ function PlaylistsPage() {
 
   const handleDeletePlaylist = async (playlistId) => {
     try {
-      await axios.delete(`http://localhost:3000/playlists/${playlistId}`);
+      await axios.delete(`/api/playlists/${playlistId}`);
       fetchPlaylists();
     } catch (error) {
       console.error('Döngü silme hatası:', error);

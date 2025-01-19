@@ -14,7 +14,7 @@ function MediaPage() {
 
   const fetchMedias = async () => {
     try {
-      const response = await axios.get('http://localhost:3000/media');
+      const response = await axios.get('/api/media');
       setMedias(response.data);
     } catch (error) {
       console.error('Medya listesi alınırken hata:', error);
@@ -35,7 +35,7 @@ function MediaPage() {
 
   const handleDelete = async (id) => {
     try {
-      await axios.delete(`http://localhost:3000/media/${id}`);
+      await axios.delete(`/api/media/${id}`);
       fetchMedias();
     } catch (error) {
       console.error('Silme hatası:', error);
@@ -55,7 +55,7 @@ function MediaPage() {
 
     try {
       setLoading(true);
-      await axios.post('http://localhost:3000/media/upload', formData, {
+      await axios.post('/api/media/upload', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -120,13 +120,13 @@ function MediaPage() {
               <td style={styles.previewCell}>
                 {media.mediaType === 'image' ? (
                   <img 
-                    src={`http://localhost:3000${media.filePath}`}
+                    src={`/api:3000${media.filePath}`}
                     alt={media.name}
                     style={styles.preview}
                   />
                 ) : (
                   <video 
-                    src={`http://localhost:3000${media.filePath}`}
+                    src={`/api:3000${media.filePath}`}
                     style={styles.preview}
                   />
                 )}

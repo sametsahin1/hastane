@@ -16,7 +16,7 @@ function AssignmentPage() {
 
   const fetchScreens = async () => {
     try {
-      const response = await axios.get('http://localhost:3000/screens');
+      const response = await axios.get('/api/screens');
       setScreens(response.data);
     } catch (error) {
       console.error('Ekran listesi alınırken hata:', error);
@@ -25,7 +25,7 @@ function AssignmentPage() {
 
   const fetchPlaylists = async () => {
     try {
-      const response = await axios.get('http://localhost:3000/playlists');
+      const response = await axios.get('/api/playlists');
       setPlaylists(response.data);
     } catch (error) {
       console.error('Playlist listesi alınırken hata:', error);
@@ -48,7 +48,7 @@ function AssignmentPage() {
 
     try {
       await Promise.all(selectedScreens.map(screenId =>
-        axios.put(`http://localhost:3000/screens/${screenId}`, {
+        axios.put(`/api/screens/${screenId}`, {
           currentPlaylist: selectedPlaylist
         })
       ));
@@ -67,7 +67,7 @@ function AssignmentPage() {
 
     try {
       await Promise.all(screens.map(screen =>
-        axios.put(`http://localhost:3000/screens/${screen._id}`, {
+        axios.put(`/api/screens/${screen._id}`, {
           currentPlaylist: selectedPlaylist
         })
       ));
