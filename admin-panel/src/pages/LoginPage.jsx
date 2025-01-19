@@ -6,7 +6,7 @@ function LoginPage() {
   const [password, setPassword] = useState('');
 
   const handleLogin = () => {
-    axios.post('http://localhost:3000/auth/login', { username, password })
+    axios.post('/api/auth/login', { username, password })
       .then((res) => {
         localStorage.setItem('token', res.data.token);
         window.location.href = '/media';

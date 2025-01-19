@@ -1,24 +1,30 @@
-version: '3.8'
-
 services:
-  frontend:
-    build:
-      context: ./admin-panel
-      dockerfile: Dockerfile
+  mongo:
+    image: mongo:latest
+    container_name: hastane-mongo
+    # Bu port mapping'i istersen koymayabilirsin. Koyunca host tarafında 27018 -> container:27017
     ports:
-      - "80:80"
-    networks:
-      - my-network
+      - "27018:27017"
 
   backend:
+    container_name: hastane-backend
     build:
       context: ./backend
       dockerfile: Dockerfile
     ports:
       - "3000:3000"
-    networks:
-      - my-network
+    depends_on:
+      - mongo
+    environment:
+      # Mongo'ya container ismi "mongo" üzerinden bağlanacağız
+      MONGO_URI: "mongodb://mongo:27017/hastane_sistemi"
 
-networks:
-  my-network:
-    driver: bridge 
+  frontend:
+    container_name: hastane-frontend
+    build:
+      context: ./admin-panel
+      dockerfile: Dockerfile
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
