@@ -74,6 +74,37 @@ function PlaylistsPage() {
     }
   };
 
+  const renderMediaItem = (mediaItem) => {
+    if (!mediaItem?.media) {
+      console.warn('Medya öğesi veya media property bulunamadı:', mediaItem);
+      return null;
+    }
+
+    const { media } = mediaItem;
+
+    return (
+      <div key={mediaItem._id} className="media-item">
+        {media.mediaType === 'Video' ? (
+          <video
+            src={`https://yazilimservisi.com${media.filePath}`}
+            style={{ width: '200px', height: 'auto' }}
+            controls
+          />
+        ) : media.mediaType === 'Resim' ? (
+          <img
+            src={`https://yazilimservisi.com${media.filePath}`}
+            alt={media.name}
+            style={{ width: '200px', height: 'auto' }}
+          />
+        ) : (
+          <div>Desteklenmeyen medya tipi: {media.mediaType}</div>
+        )}
+        <div>{media.name}</div>
+        <div>Süre: {mediaItem.duration} saniye</div>
+      </div>
+    );
+  };
+
   return (
     <div style={{ margin: '20px' }}>
       <h2>Playlist Yönetimi</h2>
@@ -132,25 +163,8 @@ function PlaylistsPage() {
         {playlists.map((playlist) => (
           <div key={playlist._id} style={styles.playlistItem}>
             <h4>{playlist.name}</h4>
-            <p>Medya Sayısı: {playlist.mediaItems.length}</p>
-            <div style={styles.mediaPreview}>
-              {playlist.mediaItems.map((item, index) => (
-                <div key={index} style={styles.previewItem}>
-                  {item.media.mediaType === 'Video' ? (
-                    <video
-                      src={item.media.filePath}
-                      style={styles.smallPreview}
-                      preload="metadata"
-                    />
-                  ) : (
-                    <img
-                      src={item.media.filePath}
-                      alt={item.media.name}
-                      style={styles.smallPreview}
-                    />
-                  )}
-                </div>
-              ))}
+            <div className="media-items-container">
+              {playlist.mediaItems?.map(mediaItem => renderMediaItem(mediaItem))}
             </div>
             <button
               onClick={() => handleDeletePlaylist(playlist._id)}

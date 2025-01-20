@@ -10,12 +10,10 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.example.hospitalscreenmanagement.R
-import com.example.hospitalscreenmanagement.api.ApiService
-import com.example.hospitalscreenmanagement.api.Screen
-import com.example.hospitalscreenmanagement.api.ApiClient
+import com.example.hospitalscreenmanagement.data.api.ApiService
+import com.example.hospitalscreenmanagement.data.api.RetrofitClient
+import com.example.hospitalscreenmanagement.data.model.Screen
 import kotlinx.coroutines.launch
-import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
 
 class SettingsActivity : AppCompatActivity() {
     private lateinit var spinnerScreens: Spinner
@@ -73,7 +71,7 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun setupRetrofit() {
-        apiService = ApiClient.api
+        apiService = RetrofitClient.apiService
     }
 
     private fun loadScreens() {

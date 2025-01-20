@@ -1,6 +1,7 @@
 package com.example.hospitalscreenmanagement.data.api
 
-import com.example.hospitalscreenmanagement.data.model.*
+import com.example.hospitalscreenmanagement.data.model.Screen
+import com.example.hospitalscreenmanagement.data.model.Playlist
 import retrofit2.Response
 import retrofit2.http.GET
 import retrofit2.http.Headers
@@ -17,13 +18,9 @@ interface ApiService {
 
     @Headers("Accept: application/json")
     @GET("api/screens/{screenId}")
-    suspend fun getScreenDetails(@Path("screenId") screenId: String): Response<ScreenDetail>
+    suspend fun getScreenDetails(@Path("screenId") screenId: String): Response<Screen>
 
     @Headers("Accept: application/json")
-    @GET("api/screens/{screenId}/config")
-    suspend fun getScreenConfig(@Path("screenId") screenId: String): Response<ScreenConfig>
-
-    @Headers("Accept: application/json")
-    @GET("api/playlists/{playlistId}/media")
-    suspend fun getPlaylistMedia(@Path("playlistId") playlistId: String): Response<List<MediaItemInfo>>
+    @GET("api/playlists/{playlistId}")
+    suspend fun getPlaylistDetails(@Path("playlistId") playlistId: String): Response<Playlist>
 } 

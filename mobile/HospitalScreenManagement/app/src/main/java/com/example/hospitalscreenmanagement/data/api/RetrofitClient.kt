@@ -17,6 +17,8 @@ import com.google.gson.stream.JsonWriter
 import com.example.hospitalscreenmanagement.data.model.Playlist
 
 object RetrofitClient {
+    private const val BASE_URL = "https://yazilimservisi.com/"
+
     private val loggingInterceptor = HttpLoggingInterceptor().apply {
         level = HttpLoggingInterceptor.Level.BODY
         redactHeader("Authorization")
@@ -81,7 +83,7 @@ object RetrofitClient {
         .create()
 
     private val retrofit = Retrofit.Builder()
-        .baseUrl(ApiService.BASE_URL)
+        .baseUrl(BASE_URL)
         .client(okHttpClient)
         .addConverterFactory(GsonConverterFactory.create(gson))
         .build()

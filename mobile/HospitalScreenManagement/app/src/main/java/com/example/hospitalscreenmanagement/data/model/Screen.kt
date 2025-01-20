@@ -1,12 +1,14 @@
 package com.example.hospitalscreenmanagement.data.model
 
+import com.google.gson.annotations.SerializedName
+
 data class Screen(
-    val _id: String,
+    @SerializedName("_id") val id: String,
     val name: String,
     val location: String,
     val status: String,
+    val currentPlaylist: Playlist?,
     val createdAt: String,
     val updatedAt: String,
-    val currentPlaylist: Playlist? = null,
-    val __v: Int = 0
+    @SerializedName("__v") val version: Int = 0
 ) 
