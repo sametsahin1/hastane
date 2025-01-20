@@ -5,6 +5,8 @@ services:
     # Host'ta 27018'e map'liyoruz, sadece istersen kontrol/test amaçlı
     ports:
       - "27018:27017"
+    networks:
+      - app-network
 
   backend:
     container_name: hastane-backend
@@ -21,6 +23,8 @@ services:
       # DİKKAT: Mongo'ya "mongo" servisi üzerinden, 27017 portundan bağlanacağız.
       # 'hastane_sistemi' de senin veritabanının ismi.
       MONGO_URI: "mongodb://mongo:27017/hastane_sistemi"
+    networks:
+      - app-network
 
   frontend:
     container_name: hastane-frontend
@@ -31,3 +35,9 @@ services:
       - "8080:80"
     depends_on:
       - backend
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
