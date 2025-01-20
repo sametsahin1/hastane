@@ -13,8 +13,8 @@ const PORT = 3000;
 connectDB();
 
 // middleware
-app.use(bodyParser.json());
 app.use(cors());
+app.use(bodyParser.json());
 
 // Uploads klasörünü oluştur
 const uploadsDir = '/app/uploads';
@@ -54,6 +54,6 @@ app.use((err, req, res, next) => {
   });
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server listening on port ${PORT}`);
 });

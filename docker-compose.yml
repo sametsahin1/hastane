@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   mongo:
     image: mongo:latest
@@ -25,6 +27,7 @@ services:
       # DİKKAT: Mongo'ya "mongo" servisi üzerinden, 27017 portundan bağlanacağız.
       # 'hastane_sistemi' de senin veritabanının ismi.
       MONGO_URI: "mongodb://mongo:27017/hastane_sistemi"
+      JWT_SECRET: "your-secret-key"
     networks:
       - app-network
 

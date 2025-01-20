@@ -8,7 +8,12 @@ const User = require('../models/User');
 // Register
 router.post('/register', async (req, res) => {
   try {
+    console.log('Register request received:', req.body);
     const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({ message: 'Email ve şifre gerekli' });
+    }
 
     // Email kontrolü
     const existingUser = await User.findOne({ email });
@@ -26,11 +31,16 @@ router.post('/register', async (req, res) => {
     });
 
     await user.save();
+    console.log('User registered successfully:', email);
     res.status(201).json({ message: 'Kayıt başarılı' });
 
   } catch (error) {
     console.error('Register error:', error);
-    res.status(500).json({ message: 'Kayıt işlemi başarısız', error: error.message });
+    res.status(500).json({ 
+      message: 'Kayıt işlemi başarısız', 
+      error: error.message,
+      stack: error.stack 
+    });
   }
 });
 
