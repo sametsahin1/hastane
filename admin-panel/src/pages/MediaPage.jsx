@@ -51,20 +51,21 @@ function MediaPage() {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('name', mediaName);
-    formData.append('mediaType', file.type.startsWith('image/') ? 'image' : 'video');
 
     try {
       setLoading(true);
-      await axios.post('/api/media/upload', formData, {
+      const response = await axios.post('/api/media/upload', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       });
+      console.log('Upload response:', response.data);
       setFile(null);
       setMediaName('');
       fetchMedias();
     } catch (error) {
-      console.error('Yükleme hatası:', error);
+      console.error('Upload error details:', error.response?.data || error);
+      alert('Yükleme hatası: ' + (error.response?.data?.message || error.message));
     } finally {
       setLoading(false);
     }

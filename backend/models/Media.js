@@ -8,8 +8,8 @@ const mediaSchema = new mongoose.Schema({
   },
   mediaType: {
     type: String,
-    enum: ['image', 'video'],
-    required: true
+    required: true,
+    enum: ['Resim', 'Video']
   },
   filePath: {
     type: String,
@@ -18,11 +18,9 @@ const mediaSchema = new mongoose.Schema({
   duration: {
     type: Number,
     default: 5
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now
   }
+}, {
+  timestamps: true
 });
 
 module.exports = mongoose.model('Media', mediaSchema);

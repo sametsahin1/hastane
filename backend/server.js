@@ -44,6 +44,16 @@ app.get('/', (req, res) => {
   res.send('Hastane Ekran Sistemi API çalışıyor');
 });
 
+// Hata yakalama middleware'i
+app.use((err, req, res, next) => {
+  console.error('Hata:', err);
+  res.status(500).json({
+    message: 'Sunucu hatası',
+    error: err.message,
+    stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+  });
+});
+
 app.listen(PORT, () => {
   console.log(`Server listening on port ${PORT}`);
 });
