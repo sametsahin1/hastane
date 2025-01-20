@@ -3,52 +3,44 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const router = express.Router();
-const User = require('../models/user');
+const User = require('../models/User');
 
 // Register
 router.post('/register', async (req, res) => {
   try {
-    const { username, email, password } = req.body;
+    console.log('Register request received:', req.body);
+    const { email, password } = req.body;
 
-    // Kullanıcı zaten var mı kontrol et
+    if (!email || !password) {
+      return res.status(400).json({ message: 'Email ve şifre gerekli' });
+    }
+
+    // Email kontrolü
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.status(400).json({ message: 'Bu email adresi zaten kullanımda' });
+      return res.status(400).json({ message: 'Bu email zaten kayıtlı' });
     }
 
     // Şifreyi hashle
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
+    const hashedPassword = await bcrypt.hash(password, 10);
 
     // Yeni kullanıcı oluştur
     const user = new User({
-      username,
       email,
       password: hashedPassword
     });
 
     await user.save();
-
-    // JWT token oluştur
-    const token = jwt.sign(
-      { userId: user._id },
-      process.env.JWT_SECRET,
-      { expiresIn: '24h' }
-    );
-
-    res.status(201).json({
-      message: 'Kullanıcı başarıyla oluşturuldu',
-      token,
-      user: {
-        id: user._id,
-        username: user.username,
-        email: user.email
-      }
-    });
+    console.log('User registered successfully:', email);
+    res.status(201).json({ message: 'Kayıt başarılı' });
 
   } catch (error) {
     console.error('Register error:', error);
-    res.status(500).json({ message: 'Sunucu hatası' });
+    res.status(500).json({ 
+      message: 'Kayıt işlemi başarısız', 
+      error: error.message,
+      stack: error.stack 
+    });
   }
 });
 

@@ -102,24 +102,31 @@ router.delete('/:id', async (req, res) => {
 router.get('/playlists/:playlistId/media', async (req, res) => {
     try {
         const playlist = await Playlist.findById(req.params.playlistId)
-            .populate({
-                path: 'mediaItems',
-                select: '_id name mediaType filePath duration'
-            });
+            .populate('mediaItems');
         
         if (!playlist) {
             return res.status(404).json({ message: 'Playlist bulunamadı' });
         }
 
-        // Playlist'in mediaItems'larını döndür
-        res.json(playlist.mediaItems.map(item => ({
-            _id: item._id,
-            name: item.name,
-            mediaType: item.mediaType,
-            filePath: `${process.env.BASE_URL}${item.filePath}`, // Tam URL oluştur
-            duration: item.duration
-        })));
+        // Test için örnek medya öğeleri
+        const mediaItems = [
+            {
+                _id: "1",
+                name: "Test Image 1",
+                mediaType: "image",
+                filePath: "https://picsum.photos/800/600",
+                duration: 5
+            },
+            {
+                _id: "2",
+                name: "Test Image 2",
+                mediaType: "image",
+                filePath: "https://picsum.photos/800/600?random=2",
+                duration: 5
+            }
+        ];
 
+        res.json(mediaItems);
     } catch (error) {
         console.error('Medya listesi alınırken hata:', error);
         res.status(500).json({ message: 'Sunucu hatası' });
