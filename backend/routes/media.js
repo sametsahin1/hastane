@@ -18,12 +18,19 @@ const storage = multer.diskStorage({
 const upload = multer({ 
   storage: storage,
   limits: {
-    fileSize: 10 * 1024 * 1024 // 10MB limit
+    fileSize: 50 * 1024 * 1024 // 50MB limit
   },
   fileFilter: function (req, file, cb) {
-    // Kabul edilen dosya tipleri
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'video/mp4', 'video/webm'];
-    if (allowedTypes.includes(file.mimetype)) {
+    const mimeTypes = {
+      'image/jpeg': 'Resim',
+      'image/png': 'Resim',
+      'image/gif': 'Resim',
+      'video/mp4': 'Video',
+      'video/webm': 'Video'
+    };
+
+    if (mimeTypes[file.mimetype]) {
+      req.fileType = mimeTypes[file.mimetype];
       cb(null, true);
     } else {
       cb(new Error('Desteklenmeyen dosya tipi'));
@@ -48,20 +55,16 @@ router.post('/upload', upload.single('file'), async (req, res) => {
       return res.status(400).json({ message: 'Dosya yüklenemedi' });
     }
 
-    // Dosya yolunu oluştur
     const filePath = `/uploads/${req.file.filename}`;
-
-    // Yeni medya belgesi oluştur
     const media = new Media({
       name: req.body.name,
-      mediaType: req.body.mediaType,
+      mediaType: req.fileType, // Otomatik belirlenen tip
       filePath: filePath,
-      duration: req.body.duration || 5 // Varsayılan süre 5 saniye
+      duration: req.body.duration || 5
     });
 
     const savedMedia = await media.save();
     res.status(201).json(savedMedia);
-
   } catch (error) {
     console.error('Upload error:', error);
     res.status(500).json({ 

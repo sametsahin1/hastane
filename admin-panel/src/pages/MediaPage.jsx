@@ -70,6 +70,30 @@ function MediaPage() {
     }
   };
 
+  const MediaItem = ({ media }) => {
+    if (media.mediaType === 'Video') {
+      return (
+        <video 
+          src={media.filePath} 
+          style={{ width: '100px', height: '100px', objectFit: 'cover' }}
+          controls
+          preload="metadata"
+        >
+          <source src={media.filePath} type="video/mp4" />
+          Your browser does not support the video tag.
+        </video>
+      );
+    } else {
+      return (
+        <img 
+          src={media.filePath} 
+          alt={media.name}
+          style={{ width: '100px', height: '100px', objectFit: 'cover' }}
+        />
+      );
+    }
+  };
+
   return (
     <div style={{ margin: '20px' }}>
       <h2>Medya Yönetimi</h2>
@@ -118,18 +142,7 @@ function MediaPage() {
           {medias.map((media) => (
             <tr key={media._id}>
               <td style={styles.previewCell}>
-                {media.mediaType === 'image' ? (
-                  <img 
-                    src={media.filePath}
-                    alt={media.name}
-                    style={styles.preview}
-                  />
-                ) : (
-                  <video 
-                    src={media.filePath}
-                    style={styles.preview}
-                  />
-                )}
+                <MediaItem media={media} />
               </td>
               <td>{media.name}</td>
               <td>{media.mediaType === 'image' ? 'Resim' : 'Video'}</td>
