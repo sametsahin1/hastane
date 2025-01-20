@@ -3,10 +3,8 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
 function RegisterPage() {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
   const [email, setEmail] = useState('');
-  const [name, setName] = useState('');
+  const [password, setPassword] = useState('');
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -14,10 +12,9 @@ function RegisterPage() {
     try {
       await axios.post('/api/auth/register', {
         email,
-        password,
-        name
+        password
       });
-      // Başarılı kayıttan sonra login sayfasına yönlendir
+      alert('Kayıt başarılı! Giriş yapabilirsiniz.');
       navigate('/login');
     } catch (error) {
       console.error('Register error:', error);
@@ -27,88 +24,69 @@ function RegisterPage() {
 
   return (
     <div style={styles.container}>
-      <h2 style={styles.title}>Kayıt Sayfası</h2>
-      <div style={styles.inputGroup}>
-        <label style={styles.label}>Kullanıcı Adı: </label>
+      <form onSubmit={handleSubmit} style={styles.form}>
+        <h2 style={styles.title}>Kayıt Ol</h2>
         <input
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          style={styles.input}
-        />
-      </div>
-      <div style={styles.inputGroup}>
-        <label style={styles.label}>Şifre: </label>
-        <input
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          style={styles.input}
-        />
-      </div>
-      <div style={styles.inputGroup}>
-        <label style={styles.label}>Email: </label>
-        <input
+          type="email"
+          placeholder="Email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           style={styles.input}
+          required
         />
-      </div>
-      <div style={styles.inputGroup}>
-        <label style={styles.label}>Adı: </label>
         <input
-          value={name}
-          onChange={(e) => setName(e.target.value)}
+          type="password"
+          placeholder="Şifre"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
           style={styles.input}
+          required
         />
-      </div>
-      <button onClick={handleSubmit} style={styles.button}>Kayıt Ol</button>
+        <button type="submit" style={styles.button}>
+          Kayıt Ol
+        </button>
+      </form>
     </div>
   );
 }
 
 const styles = {
   container: {
-    maxWidth: '400px',
-    margin: '50px auto',
-    padding: '20px',
-    borderRadius: '12px',
-    boxShadow: '0 4px 15px rgba(0, 0, 0, 0.2)',
-    backgroundColor: '#fff',
-    textAlign: 'center',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    minHeight: '100vh',
+    backgroundColor: '#f5f5f5',
+  },
+  form: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '20px',
+    padding: '40px',
+    backgroundColor: 'white',
+    borderRadius: '8px',
+    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+    minWidth: '300px',
   },
   title: {
-    marginBottom: '20px',
-    fontSize: '24px',
+    textAlign: 'center',
+    margin: '0 0 20px 0',
     color: '#333',
   },
-  inputGroup: {
-    marginBottom: '15px',
-    textAlign: 'left',
-  },
-  label: {
-    display: 'block',
-    marginBottom: '5px',
-    fontSize: '16px',
-    color: '#555',
-  },
   input: {
-    maxWidth: '100%',
-    width: '100%',
     padding: '10px',
+    borderRadius: '4px',
+    border: '1px solid #ddd',
     fontSize: '16px',
-    borderRadius: '5px',
-    border: '1px solid #ccc',
-    boxSizing: 'border-box',
   },
   button: {
-    padding: '10px 20px',
+    padding: '12px',
     backgroundColor: '#007bff',
     color: 'white',
     border: 'none',
-    borderRadius: '5px',
+    borderRadius: '4px',
     cursor: 'pointer',
     fontSize: '16px',
-    transition: 'background-color 0.3s',
   },
 };
 

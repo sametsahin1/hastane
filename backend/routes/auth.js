@@ -1,56 +1,83 @@
 // routes/auth.js
 const express = require('express');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const router = express.Router();
 const User = require('../models/User');
 
-// basit secret key
-const SECRET_KEY = 'SECRET123'; 
-
-// Register (opsiyonel)
+// Register
 router.post('/register', async (req, res) => {
   try {
-    const { username, password } = req.body;
-    const userExists = await User.findOne({ username });
-    if (userExists) {
-      return res.status(400).json({ message: 'Kullanıcı adı zaten var' });
+    const { email, password } = req.body;
+
+    // Email kontrolü
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ message: 'Bu email zaten kayıtlı' });
     }
 
-    const passwordHash = await bcrypt.hash(password, 10);
-    const newUser = new User({ username, passwordHash });
-    await newUser.save();
+    // Şifreyi hashle
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-    return res.status(201).json({ message: 'Kullanıcı oluşturuldu' });
-  } catch (err) {
-    return res.status(500).json({ message: 'Sunucu hatası', error: err });
+    // Yeni kullanıcı oluştur
+    const user = new User({
+      email,
+      password: hashedPassword
+    });
+
+    await user.save();
+    res.status(201).json({ message: 'Kayıt başarılı' });
+
+  } catch (error) {
+    console.error('Register error:', error);
+    res.status(500).json({ message: 'Kayıt işlemi başarısız', error: error.message });
   }
 });
 
 // Login
 router.post('/login', async (req, res) => {
   try {
-    const { username, password } = req.body;
-    const user = await User.findOne({ username });
+    const { email, password } = req.body;
+
+    // Kullanıcıyı bul
+    const user = await User.findOne({ email });
     if (!user) {
-      return res.status(401).json({ message: 'Kullanıcı bulunamadı' });
+      return res.status(401).json({ message: 'Email veya şifre hatalı' });
     }
 
-    const match = await bcrypt.compare(password, user.passwordHash);
-    if (!match) {
-      return res.status(401).json({ message: 'Şifre hatalı' });
+    // Şifreyi kontrol et
+    const isValidPassword = await bcrypt.compare(password, user.password);
+    if (!isValidPassword) {
+      return res.status(401).json({ message: 'Email veya şifre hatalı' });
     }
 
-    // JWT oluştur
+    // Token oluştur
     const token = jwt.sign(
-      { userId: user._id, username: user.username, role: user.role },
-      SECRET_KEY,
-      { expiresIn: '2h' }
+      { userId: user._id },
+      process.env.JWT_SECRET || 'your-secret-key',
+      { expiresIn: '24h' }
     );
 
-    return res.json({ message: 'Giriş başarılı', token });
-  } catch (err) {
-    return res.status(500).json({ message: 'Sunucu hatası', error: err });
+    res.json({ token });
+
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({ message: 'Giriş işlemi başarısız', error: error.message });
+  }
+});
+
+// Token doğrulama
+router.get('/verify', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) {
+      return res.status(401).json({ message: 'Token bulunamadı' });
+    }
+
+    jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
+    res.json({ valid: true });
+  } catch (error) {
+    res.status(401).json({ message: 'Geçersiz token' });
   }
 });
 
