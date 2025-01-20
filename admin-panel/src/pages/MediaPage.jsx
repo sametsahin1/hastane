@@ -52,10 +52,6 @@ function MediaPage() {
     formData.append('file', file);
     formData.append('name', mediaName);
     
-    // Dosya türünü doğru şekilde belirle
-    const mediaType = file.type.startsWith('image/') ? 'Resim' : 'Video';
-    formData.append('mediaType', mediaType);
-
     try {
       setLoading(true);
       const response = await axios.post('/api/media/upload', formData, {
@@ -76,27 +72,23 @@ function MediaPage() {
   };
 
   const MediaItem = ({ media }) => {
-    if (media.mediaType === 'Video') {
-      return (
-        <video 
-          src={media.filePath} 
-          style={{ width: '100px', height: '100px', objectFit: 'cover' }}
-          controls
-          preload="metadata"
-        >
-          <source src={media.filePath} type="video/mp4" />
-          Your browser does not support the video tag.
-        </video>
-      );
-    } else {
-      return (
-        <img 
-          src={media.filePath} 
-          alt={media.name}
-          style={{ width: '100px', height: '100px', objectFit: 'cover' }}
-        />
-      );
-    }
+    return media.mediaType === 'Video' ? (
+      <video 
+        src={media.filePath} 
+        style={{ width: '100px', height: '100px', objectFit: 'cover' }}
+        controls
+        preload="metadata"
+      >
+        <source src={media.filePath} type="video/mp4" />
+        Your browser does not support the video tag.
+      </video>
+    ) : (
+      <img 
+        src={media.filePath} 
+        alt={media.name}
+        style={{ width: '100px', height: '100px', objectFit: 'cover' }}
+      />
+    );
   };
 
   return (
@@ -150,7 +142,7 @@ function MediaPage() {
                 <MediaItem media={media} />
               </td>
               <td>{media.name}</td>
-              <td>{media.mediaType === 'image' ? 'Resim' : 'Video'}</td>
+              <td>{media.mediaType}</td>
               <td>{new Date(media.createdAt).toLocaleString()}</td>
               <td>
                 <button 

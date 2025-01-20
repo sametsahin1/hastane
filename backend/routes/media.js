@@ -22,6 +22,7 @@ const upload = multer({
     fileSize: 50 * 1024 * 1024
   },
   fileFilter: function (req, file, cb) {
+    // MIME type kontrolü
     if (file.mimetype.startsWith('image/')) {
       req.fileType = 'Resim';
       cb(null, true);
@@ -51,15 +52,18 @@ router.post('/upload', upload.single('file'), async (req, res) => {
       return res.status(400).json({ message: 'Dosya yüklenemedi' });
     }
 
+    console.log('Yüklenen dosya tipi:', req.fileType); // Debug için log
+
     const filePath = `/uploads/${req.file.filename}`;
     const media = new Media({
       name: req.body.name || req.file.originalname,
-      mediaType: req.fileType,  // Multer'dan gelen dosya tipi
+      mediaType: req.fileType, // Multer middleware'inden gelen dosya tipi
       filePath: filePath,
       duration: req.body.duration || 5
     });
 
     const savedMedia = await media.save();
+    console.log('Kaydedilen medya:', savedMedia); // Debug için log
     res.status(201).json(savedMedia);
 
   } catch (error) {
