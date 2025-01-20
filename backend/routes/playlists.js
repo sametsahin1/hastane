@@ -14,6 +14,7 @@ router.get('/', async (req, res) => {
       })
       .sort({ createdAt: -1 });
 
+    console.log('Playlists:', playlists); // Debug için log
     res.json(playlists);
   } catch (error) {
     console.error('Playlist listesi hatası:', error);
@@ -27,13 +28,24 @@ router.get('/', async (req, res) => {
 // Yeni playlist oluştur
 router.post('/', async (req, res) => {
   try {
+    console.log('Gelen playlist verisi:', req.body); // Debug için log
+
     const playlist = new Playlist({
       name: req.body.name,
-      mediaItems: req.body.mediaItems || []
+      mediaItems: req.body.mediaItems
     });
 
     const savedPlaylist = await playlist.save();
-    res.status(201).json(savedPlaylist);
+    console.log('Kaydedilen playlist:', savedPlaylist); // Debug için log
+
+    const populatedPlaylist = await Playlist.findById(savedPlaylist._id)
+      .populate({
+        path: 'mediaItems.media',
+        model: 'Media',
+        select: 'name mediaType filePath duration'
+      });
+
+    res.status(201).json(populatedPlaylist);
   } catch (error) {
     console.error('Playlist oluşturma hatası:', error);
     res.status(400).json({ message: error.message });

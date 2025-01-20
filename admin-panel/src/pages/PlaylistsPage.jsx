@@ -2,25 +2,16 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
 function PlaylistsPage() {
-  const [playlistName, setPlaylistName] = useState('');
-  const [selectedMedias, setSelectedMedias] = useState([]);
-  const [availableMedias, setAvailableMedias] = useState([]);
   const [playlists, setPlaylists] = useState([]);
+  const [medias, setMedias] = useState([]);
+  const [selectedMedias, setSelectedMedias] = useState([]);
+  const [playlistName, setPlaylistName] = useState('');
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    fetchMedias();
     fetchPlaylists();
+    fetchMedias();
   }, []);
-
-  const fetchMedias = async () => {
-    try {
-      const response = await axios.get('/api/media');
-      setAvailableMedias(response.data);
-    } catch (error) {
-      console.error('Medya listesi alınırken hata:', error);
-    }
-  };
 
   const fetchPlaylists = async () => {
     try {
@@ -31,26 +22,24 @@ function PlaylistsPage() {
     }
   };
 
-  const handleMediaSelect = (mediaId) => {
-    const media = availableMedias.find(m => m._id === mediaId);
-    if (media) {
-      setSelectedMedias([...selectedMedias, {
-        mediaId: media._id,
-        duration: 5, // varsayılan süre
-        name: media.name,
-        mediaType: media.mediaType
-      }]);
+  const fetchMedias = async () => {
+    try {
+      const response = await axios.get('/api/media');
+      setMedias(response.data);
+    } catch (error) {
+      console.error('Medya listesi alınırken hata:', error);
     }
   };
 
-  const handleDurationChange = (index, duration) => {
-    const newSelectedMedias = [...selectedMedias];
-    newSelectedMedias[index].duration = Number(duration);
-    setSelectedMedias(newSelectedMedias);
-  };
-
-  const handleRemoveMedia = (index) => {
-    setSelectedMedias(selectedMedias.filter((_, i) => i !== index));
+  const handleMediaSelect = (mediaId) => {
+    setSelectedMedias(prev => {
+      const exists = prev.find(item => item.media === mediaId);
+      if (exists) {
+        return prev.filter(item => item.media !== mediaId);
+      } else {
+        return [...prev, { media: mediaId, duration: 5 }];
+      }
+    });
   };
 
   const handleCreatePlaylist = async () => {
@@ -61,149 +50,123 @@ function PlaylistsPage() {
 
     try {
       setLoading(true);
-      const mediaData = selectedMedias.map(media => ({
-        mediaId: media.mediaId,
-        duration: media.duration
-      }));
-
       await axios.post('/api/playlists', {
         name: playlistName,
-        medias: mediaData
+        mediaItems: selectedMedias
       });
       setPlaylistName('');
       setSelectedMedias([]);
       fetchPlaylists();
     } catch (error) {
       console.error('Playlist oluşturma hatası:', error);
-      alert('Playlist oluşturulurken bir hata oluştu');
+      alert('Playlist oluşturulurken hata oluştu');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDeletePlaylist = async (playlistId) => {
+  const handleDeletePlaylist = async (id) => {
     try {
-      await axios.delete(`/api/playlists/${playlistId}`);
+      await axios.delete(`/api/playlists/${id}`);
       fetchPlaylists();
     } catch (error) {
-      console.error('Döngü silme hatası:', error);
+      console.error('Playlist silme hatası:', error);
     }
   };
 
   return (
     <div style={{ margin: '20px' }}>
-      <h2>Döngü Oluşturma</h2>
-      <div style={styles.form}>
-        <div className='input-playlist'>
+      <h2>Playlist Yönetimi</h2>
+      
+      <div style={styles.createForm}>
         <input
           type="text"
-          placeholder="Döngü Adı"
+          placeholder="Playlist Adı"
           value={playlistName}
           onChange={(e) => setPlaylistName(e.target.value)}
           style={styles.input}
-
         />
-
-        <div style={styles.mediaSelector}>
-          <h3 className='input-playlisth3'>Medya Seç</h3>
-          <select 
-            onChange={(e) => handleMediaSelect(e.target.value)}
-            value=""
-            style={styles.select}
-          >
-            <option value="">Medya seçin...</option>
-            {availableMedias.map(media => (
-              <option key={media._id} value={media._id}>
-                {media.name} ({media.mediaType === 'image' ? 'Resim' : 'Video'})
-              </option>
-            ))}
-          </select>
+        <div style={styles.mediaGrid}>
+          {medias.map((media) => (
+            <div
+              key={media._id}
+              style={{
+                ...styles.mediaItem,
+                border: selectedMedias.find(item => item.media === media._id)
+                  ? '2px solid #007bff'
+                  : '1px solid #ddd'
+              }}
+              onClick={() => handleMediaSelect(media._id)}
+            >
+              {media.mediaType === 'Video' ? (
+                <video
+                  src={media.filePath}
+                  style={styles.preview}
+                  preload="metadata"
+                />
+              ) : (
+                <img
+                  src={media.filePath}
+                  alt={media.name}
+                  style={styles.preview}
+                />
+              )}
+              <div style={styles.mediaInfo}>
+                <span>{media.name}</span>
+                <span>{media.mediaType}</span>
+              </div>
+            </div>
+          ))}
         </div>
-        </div>
-
-
-        <div style={styles.selectedMedias}>
-          <h3>Seçilen Medyalar</h3>
-          <table style={styles.table}>
-            <thead>
-              <tr>
-                <th>Medya Adı</th>
-                <th>Tür</th>
-                <th>Süre (saniye)</th>
-                <th>İşlemler</th>
-              </tr>
-            </thead>
-            <tbody>
-              {selectedMedias.map((media, index) => (
-                <tr key={index}>
-                  <td>{media.name}</td>
-                  <td>{media.mediaType === 'image' ? 'Resim' : 'Video'}</td>
-                  <td>
-                    <input
-                      type="number"
-                      min="1"
-                      value={media.duration}
-                      onChange={(e) => handleDurationChange(index, e.target.value)}
-                      style={styles.durationInput}
-                    />
-                  </td>
-                  <td>
-                    <button
-                      onClick={() => handleRemoveMedia(index)}
-                      style={styles.removeButton}
-                    >
-                      Kaldır
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
         <button
           onClick={handleCreatePlaylist}
           disabled={loading || !playlistName || selectedMedias.length === 0}
-          style={styles.createButton}
+          style={styles.button}
         >
-          {loading ? 'Oluşturuluyor...' : 'Döngü Oluştur'}
+          {loading ? 'Oluşturuluyor...' : 'Playlist Oluştur'}
         </button>
       </div>
 
-      <h3>Mevcut Döngüler</h3>
-      <table style={styles.table}>
-        <thead>
-          <tr>
-            <th>Döngü Adı</th>
-            <th>Medya Sayısı</th>
-            <th>Oluşturulma Tarihi</th>
-            <th>İşlemler</th>
-          </tr>
-        </thead>
-        <tbody>
-          {playlists.map(playlist => (
-            <tr key={playlist._id}>
-              <td>{playlist.name}</td>
-              <td>{playlist.medias ? playlist.medias.length : 0}</td>
-              <td>{new Date(playlist.createdAt).toLocaleString()}</td>
-              <td>
-                <button
-                  onClick={() => handleDeletePlaylist(playlist._id)}
-                  style={styles.deleteButton}
-                >
-                  Sil
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <h3>Playlist Listesi</h3>
+      <div style={styles.playlistGrid}>
+        {playlists.map((playlist) => (
+          <div key={playlist._id} style={styles.playlistItem}>
+            <h4>{playlist.name}</h4>
+            <p>Medya Sayısı: {playlist.mediaItems.length}</p>
+            <div style={styles.mediaPreview}>
+              {playlist.mediaItems.map((item, index) => (
+                <div key={index} style={styles.previewItem}>
+                  {item.media.mediaType === 'Video' ? (
+                    <video
+                      src={item.media.filePath}
+                      style={styles.smallPreview}
+                      preload="metadata"
+                    />
+                  ) : (
+                    <img
+                      src={item.media.filePath}
+                      alt={item.media.name}
+                      style={styles.smallPreview}
+                    />
+                  )}
+                </div>
+              ))}
+            </div>
+            <button
+              onClick={() => handleDeletePlaylist(playlist._id)}
+              style={styles.deleteButton}
+            >
+              Sil
+            </button>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
 
 const styles = {
-  form: {
+  createForm: {
     display: 'flex',
     flexDirection: 'column',
     gap: '20px',
@@ -215,36 +178,32 @@ const styles = {
     maxWidth: '300px',
     marginBottom: '0px'
   },
-  mediaSelector: {
-   display: 'flex',
-   alignItems: 'center',
-   gap: '8px',
-   marginLeft: '1em'
+  mediaGrid: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: '8px'
   },
-  select: {
+  mediaItem: {
+    width: 'calc(33.33% - 8px)',
     padding: '8px',
-    fontSize: '16px',
-    minWidth: '300px',
-    marginBottom: '0px'
-  },
-  table: {
-    width: '100%',
-    borderCollapse: 'collapse',
-    marginTop: '10px'
-  },
-  durationInput: {
-    width: '60px',
-    padding: '4px'
-  },
-  removeButton: {
-    padding: '5px 10px',
-    backgroundColor: '#dc3545',
-    color: 'white',
-    border: 'none',
+    border: '1px solid #ddd',
     borderRadius: '4px',
-    cursor: 'pointer'
+    cursor: 'pointer',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center'
   },
-  createButton: {
+  preview: {
+    width: '100%',
+    height: '150px',
+    objectFit: 'cover',
+    borderRadius: '4px'
+  },
+  mediaInfo: {
+    marginTop: '8px',
+    textAlign: 'center'
+  },
+  button: {
     padding: '10px',
     color: 'white',
     border: 'none',
@@ -252,6 +211,37 @@ const styles = {
     borderRadius: '4px',
     cursor: 'pointer',
     maxWidth: '200px'
+  },
+  playlistGrid: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: '20px'
+  },
+  playlistItem: {
+    width: 'calc(33.33% - 20px)',
+    padding: '20px',
+    border: '1px solid #ddd',
+    borderRadius: '4px',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center'
+  },
+  mediaPreview: {
+    display: 'flex',
+    gap: '8px',
+    marginBottom: '16px'
+  },
+  previewItem: {
+    width: 'calc(33.33% - 8px)',
+    padding: '8px',
+    border: '1px solid #ddd',
+    borderRadius: '4px'
+  },
+  smallPreview: {
+    width: '100%',
+    height: '100px',
+    objectFit: 'cover',
+    borderRadius: '4px'
   },
   deleteButton: {
     padding: '5px 10px',
