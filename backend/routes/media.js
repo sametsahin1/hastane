@@ -11,7 +11,8 @@ const storage = multer.diskStorage({
     cb(null, '/app/uploads/');  // Docker konteynerindeki yol
   },
   filename: function (req, file, cb) {
-    cb(null, Date.now() + '-' + Math.round(Math.random() * 1E9) + path.extname(file.originalname));
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, uniqueSuffix + path.extname(file.originalname));
   }
 });
 
@@ -55,21 +56,27 @@ router.post('/upload', upload.single('file'), async (req, res) => {
       return res.status(400).json({ message: 'Dosya yüklenemedi' });
     }
 
+    console.log('Yüklenen dosya:', req.file); // Debug için log
+    console.log('Dosya tipi:', req.fileType); // Debug için log
+
     const filePath = `/uploads/${req.file.filename}`;
     const media = new Media({
-      name: req.body.name,
-      mediaType: req.fileType, // Otomatik belirlenen tip
+      name: req.body.name || req.file.originalname,
+      mediaType: req.fileType,
       filePath: filePath,
       duration: req.body.duration || 5
     });
 
     const savedMedia = await media.save();
+    console.log('Kaydedilen medya:', savedMedia); // Debug için log
     res.status(201).json(savedMedia);
+
   } catch (error) {
     console.error('Upload error:', error);
     res.status(500).json({ 
       message: 'Medya yüklenirken hata oluştu',
-      error: error.message 
+      error: error.message,
+      stack: error.stack // Debug için stack trace
     });
   }
 });

@@ -16,15 +16,16 @@ connectDB();
 app.use(bodyParser.json());
 app.use(cors());
 
-// uploads klasörünü oluştur (eğer yoksa)
-const uploadsDir = path.join(__dirname, '../uploads'); 
+// Uploads klasörünü oluştur
+const uploadsDir = '/app/uploads';
 if (!fs.existsSync(uploadsDir)){
     fs.mkdirSync(uploadsDir, { recursive: true });
 }
-// uploads klasörünü statik olarak serve et
-app.use('/uploads', express.static('/app/uploads'));
 
-console.log('Uploads tam yolu:', path.join(__dirname, '../uploads'));
+// Uploads klasörünü statik olarak serve et
+app.use('/uploads', express.static(uploadsDir));
+
+console.log('Uploads tam yolu:', uploadsDir);
 // Rota dosyaları
 const authRoutes = require('./routes/auth');
 const mediaRoutes = require('./routes/media');
