@@ -2,7 +2,6 @@ const express = require('express');
 const cors = require('cors');
 const app = express();
 const playlistRoutes = require('./routes/playlists');
-const mediaRoutes = require('./routes/media');
 
 // CORS ayarları
 app.use(cors({
@@ -15,4 +14,3 @@ app.use(express.json());
 app.use(express.static('uploads')); // Medya dosyalarına erişim için 
 
 app.use('/playlists', playlistRoutes); 
-app.use('/api', mediaRoutes); 

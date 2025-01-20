@@ -4,8 +4,6 @@ const router = express.Router();
 const multer = require('multer');
 const path = require('path');
 const Media = require('../models/Media');
-const Playlist = require('../models/playlist');
-const MediaItem = require('../models/mediaItem');
 
 // CORS middleware
 router.use((req, res, next) => {
@@ -96,41 +94,6 @@ router.delete('/:id', async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
-});
-
-// Playlist'in medya öğelerini getir
-router.get('/playlists/:playlistId/media', async (req, res) => {
-    try {
-        const playlist = await Playlist.findById(req.params.playlistId)
-            .populate('mediaItems');
-        
-        if (!playlist) {
-            return res.status(404).json({ message: 'Playlist bulunamadı' });
-        }
-
-        // Test için örnek medya öğeleri
-        const mediaItems = [
-            {
-                _id: "1",
-                name: "Test Image 1",
-                mediaType: "image",
-                filePath: "https://picsum.photos/800/600",
-                duration: 5
-            },
-            {
-                _id: "2",
-                name: "Test Image 2",
-                mediaType: "image",
-                filePath: "https://picsum.photos/800/600?random=2",
-                duration: 5
-            }
-        ];
-
-        res.json(mediaItems);
-    } catch (error) {
-        console.error('Medya listesi alınırken hata:', error);
-        res.status(500).json({ message: 'Sunucu hatası' });
-    }
 });
 
 module.exports = router;
