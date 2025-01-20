@@ -11,6 +11,8 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
+    volumes:
+      - ./uploads:/app/uploads  # host:container
     ports:
       - "3000:3000"
     depends_on:
