@@ -1,20 +1,28 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 function RegisterPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('');
+  const [name, setName] = useState('');
+  const navigate = useNavigate();
 
-  const handleRegister = () => {
-    axios.post('/api/auth/register', { username, password })
-      .then((res) => {
-        alert('Kayıt Başarılı');
-        localStorage.setItem('token', res.data.token);
-        window.location.href = '/media';
-      })
-      .catch((err) => {
-        alert('Kayıt hatalı: ' + err.response.data.message);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      await axios.post('/api/auth/register', {
+        email,
+        password,
+        name
       });
+      // Başarılı kayıttan sonra login sayfasına yönlendir
+      navigate('/login');
+    } catch (error) {
+      console.error('Register error:', error);
+      alert('Kayıt başarısız: ' + (error.response?.data?.message || error.message));
+    }
   };
 
   return (
@@ -37,7 +45,23 @@ function RegisterPage() {
           style={styles.input}
         />
       </div>
-      <button onClick={handleRegister} style={styles.button}>Kayıt Ol</button>
+      <div style={styles.inputGroup}>
+        <label style={styles.label}>Email: </label>
+        <input
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          style={styles.input}
+        />
+      </div>
+      <div style={styles.inputGroup}>
+        <label style={styles.label}>Adı: </label>
+        <input
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          style={styles.input}
+        />
+      </div>
+      <button onClick={handleSubmit} style={styles.button}>Kayıt Ol</button>
     </div>
   );
 }

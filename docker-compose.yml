@@ -5,6 +5,8 @@ services:
     # Host'ta 27018'e map'liyoruz, sadece istersen kontrol/test amaçlı
     ports:
       - "27018:27017"
+    volumes:
+      - mongodb_data:/data/db  # Veritabanı verilerini kalıcı hale getir
     networks:
       - app-network
 
@@ -41,3 +43,6 @@ services:
 networks:
   app-network:
     driver: bridge
+
+volumes:
+  mongodb_data:  # Volume tanımı ekle

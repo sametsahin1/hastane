@@ -102,17 +102,13 @@ function AssignmentPage() {
       <h3>Ekranlar</h3>
       <div style={styles.screenList}>
         {screens.map(screen => (
-          <div key={screen._id} style={styles.screenItem}>
+          <div style={styles.screenItem} key={screen._id}>
             <input
               type="checkbox"
               checked={selectedScreens.includes(screen._id)}
               onChange={() => handleScreenSelect(screen._id)}
-              style={styles.checkbox}
             />
             <label style={styles.label}>{screen.name}</label>
-            <button onClick={() => navigate(`/preview/${screen._id}`)}>
-              Önizleme
-            </button>
           </div>
         ))}
       </div>

@@ -8,7 +8,7 @@ const Media = require('../models/Media');
 // Multer yapılandırması
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, '/app/uploads/');  // Docker konteynerindeki yol
+    cb(null, '/app/uploads/');
   },
   filename: function (req, file, cb) {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
@@ -19,19 +19,14 @@ const storage = multer.diskStorage({
 const upload = multer({ 
   storage: storage,
   limits: {
-    fileSize: 50 * 1024 * 1024 // 50MB limit
+    fileSize: 50 * 1024 * 1024
   },
   fileFilter: function (req, file, cb) {
-    const mimeTypes = {
-      'image/jpeg': 'Resim',
-      'image/png': 'Resim',
-      'image/gif': 'Resim',
-      'video/mp4': 'Video',
-      'video/webm': 'Video'
-    };
-
-    if (mimeTypes[file.mimetype]) {
-      req.fileType = mimeTypes[file.mimetype];
+    if (file.mimetype.startsWith('image/')) {
+      req.fileType = 'Resim';
+      cb(null, true);
+    } else if (file.mimetype.startsWith('video/')) {
+      req.fileType = 'Video';
       cb(null, true);
     } else {
       cb(new Error('Desteklenmeyen dosya tipi'));
@@ -56,13 +51,10 @@ router.post('/upload', upload.single('file'), async (req, res) => {
       return res.status(400).json({ message: 'Dosya yüklenemedi' });
     }
 
-    // Dosya tipini belirle
-    const mediaType = req.file.mimetype.startsWith('image/') ? 'Resim' : 'Video';
-
     const filePath = `/uploads/${req.file.filename}`;
     const media = new Media({
       name: req.body.name || req.file.originalname,
-      mediaType: mediaType,  // Otomatik belirlenen tip
+      mediaType: req.fileType,  // Multer'dan gelen dosya tipi
       filePath: filePath,
       duration: req.body.duration || 5
     });
@@ -74,8 +66,7 @@ router.post('/upload', upload.single('file'), async (req, res) => {
     console.error('Upload error:', error);
     res.status(500).json({ 
       message: 'Medya yüklenirken hata oluştu',
-      error: error.message,
-      stack: error.stack
+      error: error.message
     });
   }
 });
