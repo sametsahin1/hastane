@@ -22,4 +22,8 @@ interface ApiService {
     @Headers("Accept: application/json")
     @GET("api/screens/{screenId}/config")
     suspend fun getScreenConfig(@Path("screenId") screenId: String): Response<ScreenConfig>
+
+    @Headers("Accept: application/json")
+    @GET("api/playlists/{playlistId}/media")
+    suspend fun getPlaylistMedia(@Path("playlistId") playlistId: String): Response<List<MediaItemInfo>>
 } 
