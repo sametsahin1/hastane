@@ -2,90 +2,121 @@
 const express = require('express');
 const router = express.Router();
 const Playlist = require('../models/Playlist');
-const Media = require('../models/Media');
 
 // Tüm playlistleri getir
 router.get('/', async (req, res) => {
-    try {
-        const playlists = await Playlist.find()
-            .populate('medias.mediaId')
-            .sort({ createdAt: -1 });
-        return res.json(playlists);
-    } catch (error) {
-        return res.status(500).json({ message: error.message });
-    }
+  try {
+    const playlists = await Playlist.find()
+      .populate({
+        path: 'mediaItems.media',
+        model: 'Media',
+        select: 'name mediaType filePath duration'
+      })
+      .sort({ createdAt: -1 });
+
+    res.json(playlists);
+  } catch (error) {
+    console.error('Playlist listesi hatası:', error);
+    res.status(500).json({ 
+      message: 'Playlist listesi alınırken hata oluştu',
+      error: error.message 
+    });
+  }
 });
 
-// Yeni playlist (döngü) oluşturma
+// Yeni playlist oluştur
 router.post('/', async (req, res) => {
-    try {
-        const playlist = new Playlist({
-            name: req.body.name,
-            medias: req.body.medias
-        });
-        const savedPlaylist = await playlist.save();
-        return res.status(201).json(savedPlaylist);
-    } catch (error) {
-        return res.status(400).json({ message: error.message });
-    }
+  try {
+    const playlist = new Playlist({
+      name: req.body.name,
+      mediaItems: req.body.mediaItems || []
+    });
+
+    const savedPlaylist = await playlist.save();
+    res.status(201).json(savedPlaylist);
+  } catch (error) {
+    console.error('Playlist oluşturma hatası:', error);
+    res.status(400).json({ message: error.message });
+  }
 });
 
-// Playlist'e medya ekleme
-router.post('/:id/addMedia', async (req, res) => {
-    try {
-        const { id } = req.params; // playlist id
-        const { mediaId, duration } = req.body;
-
-        const playlist = await Playlist.findById(id);
-        if (!playlist) {
-            return res.status(404).json({ message: 'Playlist bulunamadı' });
-        }
-        
-        // Media var mı kontrol
-        const media = await Media.findById(mediaId);
-        if (!media) {
-            return res.status(404).json({ message: 'Medya bulunamadı' });
-        }
-
-        playlist.medias.push({ mediaId: media._id, duration });
-        await playlist.save();
-
-        // Populate edilmiş playlist'i geri dön
-        const updatedPlaylist = await Playlist.findById(id).populate('medias.mediaId');
-        return res.json({ message: 'Medya eklendi', playlist: updatedPlaylist });
-    } catch (err) {
-        return res.status(500).json({ message: 'Sunucu hatası', error: err });
+// Playlist'e medya ekle
+router.post('/:id/media', async (req, res) => {
+  try {
+    const playlist = await Playlist.findById(req.params.id);
+    if (!playlist) {
+      return res.status(404).json({ message: 'Playlist bulunamadı' });
     }
+
+    playlist.mediaItems.push({
+      media: req.body.mediaId,
+      duration: req.body.duration || 5
+    });
+
+    const updatedPlaylist = await playlist.save();
+    res.json(updatedPlaylist);
+  } catch (error) {
+    console.error('Medya ekleme hatası:', error);
+    res.status(400).json({ message: error.message });
+  }
 });
 
-// Playlist'ten medya silme
-router.delete('/:playlistId/media/:mediaIndex', async (req, res) => {
-    try {
-        const { playlistId, mediaIndex } = req.params;
-        
-        const playlist = await Playlist.findById(playlistId);
-        if (!playlist) {
-            return res.status(404).json({ message: 'Playlist bulunamadı' });
-        }
+// Playlist'i güncelle
+router.put('/:id', async (req, res) => {
+  try {
+    const playlist = await Playlist.findByIdAndUpdate(
+      req.params.id,
+      {
+        name: req.body.name,
+        mediaItems: req.body.mediaItems
+      },
+      { new: true }
+    );
 
-        // Medyayı sil
-        playlist.medias.splice(mediaIndex, 1);
-        await playlist.save();
-        
-        return res.json({ message: 'Medya silindi', playlist });
-    } catch (err) {
-        return res.status(500).json({ message: 'Sunucu hatası', error: err });
+    if (!playlist) {
+      return res.status(404).json({ message: 'Playlist bulunamadı' });
     }
+
+    res.json(playlist);
+  } catch (error) {
+    console.error('Playlist güncelleme hatası:', error);
+    res.status(400).json({ message: error.message });
+  }
 });
 
-// Playlist silme endpoint'i
+// Playlist'i sil
 router.delete('/:id', async (req, res) => {
-    try {
-        await Playlist.findByIdAndDelete(req.params.id);
-        res.json({ message: 'Playlist başarıyla silindi' });
-    } catch (error) {
-        res.status(500).json({ message: error.message });
+  try {
+    const playlist = await Playlist.findByIdAndDelete(req.params.id);
+    if (!playlist) {
+      return res.status(404).json({ message: 'Playlist bulunamadı' });
     }
+    res.json({ message: 'Playlist başarıyla silindi' });
+  } catch (error) {
+    console.error('Playlist silme hatası:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Tek bir playlist'i getir
+router.get('/:id', async (req, res) => {
+  try {
+    const playlist = await Playlist.findById(req.params.id)
+      .populate({
+        path: 'mediaItems.media',
+        model: 'Media',
+        select: 'name mediaType filePath duration'
+      });
+
+    if (!playlist) {
+      return res.status(404).json({ message: 'Playlist bulunamadı' });
+    }
+
+    res.json(playlist);
+  } catch (error) {
+    console.error('Playlist getirme hatası:', error);
+    res.status(500).json({ message: error.message });
+  }
 });
 
 module.exports = router;
