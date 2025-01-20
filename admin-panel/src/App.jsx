@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
+import Layout from './components/Layout';
 
 // Sayfalar
 import LoginPage from './pages/LoginPage';
@@ -12,13 +13,12 @@ import AssignmentPage from './pages/AssignmentPage';
 import PreviewPage from './pages/PreviewPage';
 import RegisterPage from './pages/RegisterPage';
 import Header from './components/Header';
-import Layout from './components/Layout';
 
 function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
-        <Header /> 
+        <Header />
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
