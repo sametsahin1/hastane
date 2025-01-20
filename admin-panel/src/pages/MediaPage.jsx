@@ -51,7 +51,11 @@ function MediaPage() {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('name', mediaName);
-
+    
+    // Dosya türünü kontrol et
+    const isImage = file.type.startsWith('image/');
+    const isVideo = file.type.startsWith('video/');
+    
     try {
       setLoading(true);
       const response = await axios.post('/api/media/upload', formData, {

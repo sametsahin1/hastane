@@ -1,5 +1,7 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext';
+import ProtectedRoute from './components/ProtectedRoute';
 
 // Sayfalar
 import LoginPage from './pages/LoginPage';
@@ -10,21 +12,42 @@ import AssignmentPage from './pages/AssignmentPage';
 import PreviewPage from './pages/PreviewPage';
 import RegisterPage from './pages/RegisterPage';
 import Header from './components/Header';
+import Layout from './components/Layout';
 
 function App() {
   return (
-    <Router>
-      <Header /> 
-      <Routes>
-        <Route path="/" element={<LoginPage />} />
-        <Route path="/media" element={<MediaPage />} />
-        <Route path="/playlists" element={<PlaylistPage />} />
-        <Route path="/screens" element={<ScreenPage />} />
-        <Route path="/assign" element={<AssignmentPage />} />
-        <Route path="/preview/:screenId" element={<PreviewPage />} />
-        <Route path="/register" element={<RegisterPage />} />
-      </Routes>
-    </Router>
+    <AuthProvider>
+      <BrowserRouter>
+        <Header /> 
+        <Routes>
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
+          <Route path="/" element={
+            <ProtectedRoute>
+              <Layout>
+                <MediaPage />
+              </Layout>
+            </ProtectedRoute>
+          } />
+          <Route path="/preview" element={
+            <ProtectedRoute>
+              <Layout>
+                <PreviewPage />
+              </Layout>
+            </ProtectedRoute>
+          } />
+          <Route path="/assignment" element={
+            <ProtectedRoute>
+              <Layout>
+                <AssignmentPage />
+              </Layout>
+            </ProtectedRoute>
+          } />
+          <Route path="/playlists" element={<PlaylistPage />} />
+          <Route path="/screens" element={<ScreenPage />} />
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
   );
 }
 
