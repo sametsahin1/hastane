@@ -1,89 +1,102 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 function LoginPage() {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const navigate = useNavigate();
+  const { setIsAuthenticated } = useAuth();
 
-  const handleLogin = () => {
-    axios.post('/api/auth/login', { username, password })
-      .then((res) => {
-        localStorage.setItem('token', res.data.token);
-        window.location.href = '/media';
-      })
-      .catch((err) => {
-        alert('Giriş hatalı: ' + err.response.data.message);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await axios.post('/api/auth/login', {
+        email,
+        password
       });
+
+      // Token'ı localStorage'a kaydet
+      localStorage.setItem('token', response.data.token);
+      
+      // Auth durumunu güncelle
+      setIsAuthenticated(true);
+      
+      // Ana sayfaya yönlendir (artık /media değil, / olacak)
+      navigate('/');
+    } catch (error) {
+      console.error('Login error:', error);
+      alert('Giriş başarısız: ' + (error.response?.data?.message || error.message));
+    }
   };
 
   return (
     <div style={styles.container}>
-      <h2 style={styles.title}>Login Sayfası</h2>
-      <div style={styles.inputGroup}>
-        <label style={styles.label}>Kullanıcı Adı: </label>
+      <form onSubmit={handleSubmit} style={styles.form}>
+        <h2 style={styles.title}>Giriş Yap</h2>
         <input
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
           style={styles.input}
         />
-      </div>
-      <div style={styles.inputGroup}>
-        <label style={styles.label}>Şifre: </label>
         <input
           type="password"
+          placeholder="Şifre"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           style={styles.input}
         />
-      </div>
-      <button onClick={handleLogin} style={styles.button}>Giriş</button>
+        <button type="submit" style={styles.button}>
+          Giriş Yap
+        </button>
+      </form>
     </div>
   );
 }
 
 const styles = {
   container: {
-    maxWidth: '400px',
-    margin: '50px auto',
-    padding: '20px',
-    borderRadius: '12px',
-    boxShadow: '0 4px 15px rgba(0, 0, 0, 0.2)',
-    backgroundColor: '#fff',
-    textAlign: 'center',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    minHeight: '100vh',
+    backgroundColor: '#f5f5f5',
+  },
+  form: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '20px',
+    padding: '40px',
+    backgroundColor: 'white',
+    borderRadius: '8px',
+    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+    minWidth: '300px',
   },
   title: {
-    marginBottom: '20px',
-    fontSize: '24px',
+    textAlign: 'center',
+    margin: '0 0 20px 0',
     color: '#333',
   },
-  inputGroup: {
-    marginBottom: '15px',
-    textAlign: 'left',
-  },
-  label: {
-    display: 'block',
-    marginBottom: '5px',
-    fontSize: '16px',
-    color: '#555',
-  },
   input: {
-    maxWidth: '100%',
-    width: '100%',
     padding: '10px',
+    borderRadius: '4px',
+    border: '1px solid #ddd',
     fontSize: '16px',
-    borderRadius: '5px',
-    border: '1px solid #ccc',
-    boxSizing: 'border-box',
   },
   button: {
-    padding: '10px 20px',
+    padding: '12px',
     backgroundColor: '#007bff',
     color: 'white',
     border: 'none',
-    borderRadius: '5px',
+    borderRadius: '4px',
     cursor: 'pointer',
     fontSize: '16px',
-    transition: 'background-color 0.3s',
+    ':hover': {
+      backgroundColor: '#0056b3',
+    },
   },
 };
 
