@@ -26,39 +26,24 @@ class PlayerActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         val screenId = intent.getStringExtra("SCREEN_ID") ?: return finish()
-        loadScreenConfig(screenId)
+        loadScreenDetails(screenId)
     }
 
-    private fun loadScreenConfig(screenId: String) {
+    private fun loadScreenDetails(screenId: String) {
         lifecycleScope.launch {
             try {
-                // Önce ekran detaylarını al
-                val screenResponse = RetrofitClient.apiService.getScreenDetails(screenId)
-                if (screenResponse.isSuccessful) {
-                    screenResponse.body()?.let { screenDetail ->
-                        // Playlist'i ekran detaylarından al
-                        screenDetail.currentPlaylist?.let { playlist ->
-                            // Playlist'in medya öğelerini al
-                            val mediaResponse = RetrofitClient.apiService.getPlaylistMedia(playlist._id)
-                            if (mediaResponse.isSuccessful) {
-                                mediaItems = mediaResponse.body() ?: emptyList()
-                                if (mediaItems.isNotEmpty()) {
-                                    startMediaPlayback()
-                                } else {
-                                    showError("Oynatma listesinde medya öğesi bulunamadı")
-                                    finish()
-                                }
-                            } else {
-                                showError("Medya listesi yüklenemedi")
-                                finish()
-                            }
+                val response = RetrofitClient.apiService.getScreenDetails(screenId)
+                if (response.isSuccessful) {
+                    response.body()?.let { screen ->
+                        screen.currentPlaylist?.let { playlist ->
+                            loadPlaylistMedia(playlist._id)
                         } ?: run {
-                            showError("Ekrana atanmış oynatma listesi bulunamadı")
+                            showError("Bu ekrana atanmış playlist bulunamadı")
                             finish()
                         }
                     }
                 } else {
-                    showError("Ekran yapılandırması yüklenemedi")
+                    showError("Ekran detayları yüklenemedi")
                     finish()
                 }
             } catch (e: Exception) {
@@ -68,13 +53,33 @@ class PlayerActivity : AppCompatActivity() {
         }
     }
 
+    private suspend fun loadPlaylistMedia(playlistId: String) {
+        try {
+            val response = RetrofitClient.apiService.getPlaylistMedia(playlistId)
+            if (response.isSuccessful) {
+                mediaItems = response.body() ?: emptyList()
+                if (mediaItems.isNotEmpty()) {
+                    startMediaPlayback()
+                } else {
+                    showError("Playlist'te medya bulunamadı")
+                    finish()
+                }
+            } else {
+                showError("Playlist medyaları yüklenemedi")
+                finish()
+            }
+        } catch (e: Exception) {
+            showError("Medya yükleme hatası: ${e.message}")
+            finish()
+        }
+    }
+
     private fun startMediaPlayback() {
+        currentMediaIndex = 0
         showCurrentMedia()
     }
 
     private fun showCurrentMedia() {
-        if (mediaItems.isEmpty()) return
-        
         val media = mediaItems[currentMediaIndex]
         
         binding.imageView.isVisible = media.mediaType.equals("image", ignoreCase = true)
@@ -85,15 +90,12 @@ class PlayerActivity : AppCompatActivity() {
                 Glide.with(this)
                     .load(media.filePath)
                     .into(binding.imageView)
-                
                 scheduleNextMedia(media.duration * 1000L)
             }
             media.mediaType.equals("video", ignoreCase = true) -> {
                 binding.videoView.apply {
                     setVideoPath(media.filePath)
-                    setOnCompletionListener {
-                        showNextMedia()
-                    }
+                    setOnCompletionListener { showNextMedia() }
                     setOnErrorListener { _, _, _ ->
                         showNextMedia()
                         true
@@ -107,9 +109,7 @@ class PlayerActivity : AppCompatActivity() {
     private fun scheduleNextMedia(delay: Long) {
         currentHandler?.removeCallbacksAndMessages(null)
         currentHandler = Handler(Looper.getMainLooper()).apply {
-            postDelayed({
-                showNextMedia()
-            }, delay)
+            postDelayed({ showNextMedia() }, delay)
         }
     }
 
@@ -125,5 +125,6 @@ class PlayerActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         currentHandler?.removeCallbacksAndMessages(null)
+        binding.videoView.stopPlayback()
     }
 } 
