@@ -17,7 +17,7 @@ app.use(bodyParser.json());
 app.use(cors());
 
 // uploads klasörünü oluştur (eğer yoksa)
-const uploadsDir = path.join(__dirname, '../uploads');
+const uploadsDir = path.join(__dirname, '../uploads'); 
 if (!fs.existsSync(uploadsDir)){
     fs.mkdirSync(uploadsDir, { recursive: true });
 }
