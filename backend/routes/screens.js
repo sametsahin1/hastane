@@ -94,25 +94,34 @@ router.delete('/:id', async (req, res) => {
 // PUT - Ekran güncelleme
 router.put('/:id', async (req, res) => {
   try {
+    console.log('Ekran güncelleme isteği:', {
+      screenId: req.params.id,
+      updateData: req.body
+    });
+
     const screen = await Screen.findByIdAndUpdate(
       req.params.id,
       {
         name: req.body.name,
         location: req.body.location,
         status: req.body.status,
-        currentPlaylist: req.body.playlistId
+        currentPlaylist: req.body.currentPlaylist
       },
       { new: true }
-    );
+    ).populate('currentPlaylist');
 
     if (!screen) {
       return res.status(404).json({ message: 'Ekran bulunamadı' });
     }
 
+    console.log('Güncellenen ekran:', screen);
     res.json(screen);
   } catch (error) {
     console.error('Ekran güncelleme hatası:', error);
-    res.status(400).json({ message: error.message });
+    res.status(400).json({ 
+      message: 'Ekran güncellenirken hata oluştu',
+      error: error.message 
+    });
   }
 });
 

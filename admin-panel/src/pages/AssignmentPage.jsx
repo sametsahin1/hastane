@@ -8,6 +8,7 @@ function AssignmentPage() {
   const [playlists, setPlaylists] = useState([]);
   const [selectedScreens, setSelectedScreens] = useState([]);
   const [selectedPlaylist, setSelectedPlaylist] = useState('');
+  const [loading, setLoading] = useState(false);
   const [notification, setNotification] = useState('');
   const navigate = useNavigate();
 
@@ -35,90 +36,118 @@ function AssignmentPage() {
   };
 
   const handleScreenSelect = (screenId) => {
-    setSelectedScreens(prevSelected =>
-      prevSelected.includes(screenId)
-        ? prevSelected.filter(id => id !== screenId)
-        : [...prevSelected, screenId]
-    );
+    setSelectedScreens(prev => {
+      if (prev.includes(screenId)) {
+        return prev.filter(id => id !== screenId);
+      } else {
+        return [...prev, screenId];
+      }
+    });
   };
 
-  const assignPlaylistToSelectedScreens = async () => {
-    if (!selectedPlaylist) {
-      alert('Lütfen bir playlist seçin');
+  const handleSelectAllScreens = () => {
+    if (selectedScreens.length === screens.length) {
+      setSelectedScreens([]);
+    } else {
+      setSelectedScreens(screens.map(screen => screen._id));
+    }
+  };
+
+  const handleAssign = async () => {
+    if (!selectedPlaylist || selectedScreens.length === 0) {
+      alert('Lütfen bir playlist ve en az bir ekran seçin');
       return;
     }
 
     try {
-      await Promise.all(selectedScreens.map(screenId =>
+      setLoading(true);
+      const promises = selectedScreens.map(screenId =>
         axios.put(`/api/screens/${screenId}`, {
           currentPlaylist: selectedPlaylist
         })
-      ));
-      setNotification('Playlist başarıyla atandı');
-      fetchScreens();
-    } catch (error) {
-      console.error('Playlist atama hatası:', error);
-    }
-  };
+      );
 
-  const assignPlaylistToAllScreens = async () => {
-    if (!selectedPlaylist) {
-      alert('Lütfen bir playlist seçin');
-      return;
-    }
-
-    try {
-      await Promise.all(screens.map(screen =>
-        axios.put(`/api/screens/${screen._id}`, {
-          currentPlaylist: selectedPlaylist
-        })
-      ));
-      setNotification('Playlist tüm ekranlara başarıyla atandı');
-      fetchScreens();
+      await Promise.all(promises);
+      alert('Atama başarıyla tamamlandı');
+      setSelectedScreens([]);
+      setSelectedPlaylist('');
+      fetchScreens(); // Ekranları yenile
     } catch (error) {
-      console.error('Playlist atama hatası:', error);
+      console.error('Atama hatası:', error);
+      alert('Atama yapılırken bir hata oluştu');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <div style={{ margin: '20px' }}>
-      <h2>Ekran-Playlist Atama</h2>
-      <div style={styles.selector}>
-        <h3>Playlist Seç</h3>
-        <select
-          onChange={(e) => setSelectedPlaylist(e.target.value)}
-          value={selectedPlaylist}
-          style={styles.select}
-        >
-          <option value="">Playlist seçin...</option>
-          {playlists.map(playlist => (
-            <option key={playlist._id} value={playlist._id}>
-              {playlist.name}
-            </option>
-          ))}
-        </select>
-      </div>
+      <h2>Playlist Atama</h2>
+      
+      <div style={styles.container}>
+        <div style={styles.section}>
+          <h3>Playlist Seçin</h3>
+          <select
+            value={selectedPlaylist}
+            onChange={(e) => setSelectedPlaylist(e.target.value)}
+            style={styles.select}
+          >
+            <option value="">Playlist seçin...</option>
+            {playlists.map(playlist => (
+              <option key={playlist._id} value={playlist._id}>
+                {playlist.name}
+              </option>
+            ))}
+          </select>
+        </div>
 
-      <h3>Ekranlar</h3>
-      <div style={styles.screenList}>
-        {screens.map(screen => (
-          <div style={styles.screenItem} key={screen._id}>
-            <input
-              type="checkbox"
-              checked={selectedScreens.includes(screen._id)}
-              onChange={() => handleScreenSelect(screen._id)}
-            />
-            <label style={styles.label}>{screen.name}</label>
+        <div style={styles.section}>
+          <h3>Ekranlar</h3>
+          <button
+            onClick={handleSelectAllScreens}
+            style={styles.button}
+          >
+            {selectedScreens.length === screens.length ? 'Tümünü Kaldır' : 'Tümünü Seç'}
+          </button>
+          
+          <div style={styles.screenGrid}>
+            {screens.map(screen => (
+              <div
+                key={screen._id}
+                style={{
+                  ...styles.screenItem,
+                  backgroundColor: selectedScreens.includes(screen._id) ? '#e3f2fd' : 'white'
+                }}
+                onClick={() => handleScreenSelect(screen._id)}
+              >
+                <input
+                  type="checkbox"
+                  checked={selectedScreens.includes(screen._id)}
+                  onChange={() => {}} // React controlled component için
+                  style={styles.checkbox}
+                />
+                <span style={styles.screenName}>{screen.name}</span>
+                {screen.currentPlaylist && (
+                  <span style={styles.currentPlaylist}>
+                    Mevcut Playlist: {playlists.find(p => p._id === screen.currentPlaylist)?.name || 'Bulunamadı'}
+                  </span>
+                )}
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
+        </div>
 
-      <button onClick={assignPlaylistToSelectedScreens} style={styles.button}>
-        Seçilen Ekranlara Ata
-      </button>
-      <button onClick={assignPlaylistToAllScreens} style={styles.button}>
-        Tüm Ekranlara Ata
-      </button>
+        <button
+          onClick={handleAssign}
+          disabled={loading || !selectedPlaylist || selectedScreens.length === 0}
+          style={{
+            ...styles.assignButton,
+            opacity: (loading || !selectedPlaylist || selectedScreens.length === 0) ? 0.5 : 1
+          }}
+        >
+          {loading ? 'Atanıyor...' : `Seçilen Ekranlara Ata (${selectedScreens.length})`}
+        </button>
+      </div>
 
       <Notification message={notification} onClose={() => setNotification('')} />
     </div>
@@ -126,45 +155,67 @@ function AssignmentPage() {
 }
 
 const styles = {
-  selector: {
+  container: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '20px'
+  },
+  section: {
     marginBottom: '20px'
   },
   select: {
+    width: '100%',
+    maxWidth: '300px',
     padding: '8px',
     fontSize: '16px',
-    minWidth: '200px'
+    marginBottom: '20px'
   },
-  screenList: {
-    display: 'flex',
-    marginBottom: '20px',
-    maxHeight: '300px',
-    overflowY: 'auto',
-    border: '1px solid rgb(204, 204, 204)',
-    padding: '10px',
-    borderRadius: '5px',
-    alignItems: 'center',
-    gap: '40px'
+  screenGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
+    gap: '10px',
+    marginTop: '10px'
   },
   screenItem: {
+    padding: '15px',
+    border: '1px solid #ddd',
+    borderRadius: '4px',
     display: 'flex',
     alignItems: 'center',
-    marginBottom: '10px'
+    gap: '10px',
+    cursor: 'pointer',
+    transition: 'background-color 0.2s'
   },
   checkbox: {
-    marginRight: '10px'
+    cursor: 'pointer'
   },
-  label: {
-    fontSize: '16px',
-    margin: '0px'
+  screenName: {
+    fontWeight: 'bold'
+  },
+  currentPlaylist: {
+    fontSize: '0.9em',
+    color: '#666',
+    marginLeft: 'auto'
   },
   button: {
-    padding: '10px 20px',
+    padding: '8px 16px',
     backgroundColor: '#007bff',
     color: 'white',
     border: 'none',
-    borderRadius: '5px',
+    borderRadius: '4px',
     cursor: 'pointer',
-    marginRight: '10px'
+    marginBottom: '10px'
+  },
+  assignButton: {
+    padding: '12px 24px',
+    backgroundColor: '#28a745',
+    color: 'white',
+    border: 'none',
+    borderRadius: '4px',
+    cursor: 'pointer',
+    fontSize: '16px',
+    fontWeight: 'bold',
+    alignSelf: 'flex-start'
   }
 };
 
