@@ -8,7 +8,7 @@ const screenSchema = new mongoose.Schema({
   },
   location: {
     type: String,
-    required: true
+    default: ''
   },
   status: {
     type: String,
@@ -18,12 +18,9 @@ const screenSchema = new mongoose.Schema({
   currentPlaylist: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Playlist'
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now
   }
-  // diğer gerekli alanlar...
+}, {
+  timestamps: true
 });
 
 module.exports = mongoose.model('Screen', screenSchema);

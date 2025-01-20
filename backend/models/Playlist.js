@@ -2,27 +2,23 @@
 const mongoose = require('mongoose');
 
 const playlistSchema = new mongoose.Schema({
-  name: { 
-    type: String, 
-    required: true,
-    trim: true
+  name: {
+    type: String,
+    required: true
   },
-  medias: [{
-    mediaId: { 
-      type: mongoose.Schema.Types.ObjectId, 
+  mediaItems: [{
+    media: {
+      type: mongoose.Schema.Types.ObjectId,
       ref: 'Media',
       required: true
     },
-    duration: { 
-      type: Number, 
-      default: 5,
-      min: 1
+    duration: {
+      type: Number,
+      default: 5
     }
-  }],
-  createdAt: { 
-    type: Date, 
-    default: Date.now 
-  }
+  }]
+}, {
+  timestamps: true
 });
 
 module.exports = mongoose.model('Playlist', playlistSchema);

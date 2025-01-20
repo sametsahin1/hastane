@@ -7,15 +7,18 @@ function PreviewPage() {
   const [screen, setScreen] = useState(null);
   const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const fetchScreen = async () => {
       try {
         const response = await axios.get(`/api/screens/${screenId}`);
+        console.log('Screen data:', response.data); // Debug için log
         setScreen(response.data);
         setLoading(false);
       } catch (error) {
         console.error('Ekran bilgileri alınırken hata:', error);
+        setError(error.response?.data?.message || 'Ekran bilgileri alınamadı');
         setLoading(false);
       }
     };
@@ -37,12 +40,13 @@ function PreviewPage() {
   }, [screen, currentMediaIndex]);
 
   if (loading) return <div>Yükleniyor...</div>;
+  if (error) return <div>Hata: {error}</div>;
   if (!screen) return <div>Ekran bulunamadı</div>;
   if (!screen.currentPlaylist?.mediaItems?.length) {
     return <div>Bu ekrana atanmış medya bulunamadı</div>;
   }
 
-  const currentMedia = screen.currentPlaylist.mediaItems[currentMediaIndex];
+  const currentMedia = screen.currentPlaylist.mediaItems[currentMediaIndex].media;
 
   return (
     <div style={styles.container}>
