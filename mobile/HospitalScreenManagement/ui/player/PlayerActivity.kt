@@ -1,18 +1,3 @@
-package com.example.hospitalscreenmanagement.ui
-
-import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
-import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.isVisible
-import androidx.lifecycle.lifecycleScope
-import com.bumptech.glide.Glide
-import com.example.hospitalscreenmanagement.data.api.RetrofitClient
-import com.example.hospitalscreenmanagement.data.model.MediaItemInfo
-import com.example.hospitalscreenmanagement.databinding.ActivityPlayerBinding
-import kotlinx.coroutines.launch
-
 class PlayerActivity : AppCompatActivity() {
     private lateinit var binding: ActivityPlayerBinding
     private var currentMediaIndex = 0
@@ -24,7 +9,9 @@ class PlayerActivity : AppCompatActivity() {
         binding = ActivityPlayerBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        val screenId = intent.getStringExtra("SCREEN_ID") ?: return finish()
+        val screenId = intent.getStringExtra(ScreenSelectionActivity.EXTRA_SCREEN_ID)
+            ?: return finish()
+
         loadScreenConfig(screenId)
     }
 

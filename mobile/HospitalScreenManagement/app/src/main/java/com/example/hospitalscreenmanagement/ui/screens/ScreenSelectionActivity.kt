@@ -1,4 +1,18 @@
+package com.example.hospitalscreenmanagement.ui.screens
+
+import android.content.Intent
+import android.os.Bundle
+import android.util.Log
+import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.isVisible
 import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.LinearLayoutManager
+import com.example.hospitalscreenmanagement.data.api.RetrofitClient
+import com.example.hospitalscreenmanagement.data.api.ApiService
+import com.example.hospitalscreenmanagement.data.model.Screen
+import com.example.hospitalscreenmanagement.databinding.ActivityScreenSelectionBinding
+import com.example.hospitalscreenmanagement.ui.PlayerActivity
 import kotlinx.coroutines.launch
 
 class ScreenSelectionActivity : AppCompatActivity() {
@@ -27,15 +41,20 @@ class ScreenSelectionActivity : AppCompatActivity() {
         lifecycleScope.launch {
             try {
                 binding.progressBar.isVisible = true
+                Log.d("API", "Requesting screens from: ${ApiService.BASE_URL}")
                 val response = RetrofitClient.apiService.getScreens()
+                Log.d("API", "Response: $response")
                 if (response.isSuccessful) {
                     response.body()?.let { screens ->
+                        Log.d("API", "Received screens: $screens")
                         screenAdapter.submitList(screens)
                     }
                 } else {
-                    showError("Ekranlar yüklenirken hata oluştu")
+                    Log.e("API", "Error: ${response.errorBody()?.string()}")
+                    showError("Ekranlar yüklenirken hata oluştu: ${response.code()}")
                 }
             } catch (e: Exception) {
+                Log.e("API", "Exception: ${e.message}", e)
                 showError("Bağlantı hatası: ${e.message}")
             } finally {
                 binding.progressBar.isVisible = false
@@ -45,16 +64,12 @@ class ScreenSelectionActivity : AppCompatActivity() {
 
     private fun navigateToPlayer(screenId: String) {
         val intent = Intent(this, PlayerActivity::class.java).apply {
-            putExtra(EXTRA_SCREEN_ID, screenId)
+            putExtra("SCREEN_ID", screenId)
         }
         startActivity(intent)
     }
 
     private fun showError(message: String) {
         Toast.makeText(this, message, Toast.LENGTH_LONG).show()
-    }
-
-    companion object {
-        const val EXTRA_SCREEN_ID = "extra_screen_id"
     }
 } 
