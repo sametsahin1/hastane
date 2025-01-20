@@ -8,12 +8,10 @@ const Media = require('../models/Media');
 // Multer yapılandırması
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, path.join(__dirname, '../uploads')); // uploads klasörüne kaydet
+    cb(null, '/app/uploads/');  // Docker konteynerindeki yol
   },
   filename: function (req, file, cb) {
-    // Benzersiz dosya adı oluştur
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, uniqueSuffix + path.extname(file.originalname));
+    cb(null, Date.now() + '-' + Math.round(Math.random() * 1E9) + path.extname(file.originalname));
   }
 });
 
