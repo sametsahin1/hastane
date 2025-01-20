@@ -29,7 +29,7 @@ function App() {
               </Layout>
             </ProtectedRoute>
           } />
-          <Route path="/preview" element={
+          <Route path="/preview/:screenId" element={
             <ProtectedRoute>
               <Layout>
                 <PreviewPage />

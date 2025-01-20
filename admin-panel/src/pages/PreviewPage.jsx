@@ -1,69 +1,107 @@
 import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import axios from 'axios';
 
 function PreviewPage() {
-  const [medias, setMedias] = useState([]);
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const { screenId } = useParams();
+  const [screen, setScreen] = useState(null);
+  const [currentPlaylist, setCurrentPlaylist] = useState(null);
+  const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
+  // Ekran ve playlist bilgilerini al
   useEffect(() => {
-    fetchMedias();
-  }, []);
+    const fetchScreenData = async () => {
+      try {
+        const response = await axios.get(`/api/screens/${screenId}`);
+        setScreen(response.data);
+        
+        if (response.data.currentPlaylist) {
+          const playlistResponse = await axios.get(`/api/playlists/${response.data.currentPlaylist}`);
+          setCurrentPlaylist(playlistResponse.data);
+        }
+        
+        setLoading(false);
+      } catch (error) {
+        console.error('Ekran bilgileri alınırken hata:', error);
+        setError('Ekran bilgileri yüklenemedi');
+        setLoading(false);
+      }
+    };
 
-  const fetchMedias = async () => {
-    try {
-      const response = await axios.get('/api/media');
-      setMedias(response.data);
-      setLoading(false);
-    } catch (error) {
-      console.error('Medya listesi alınırken hata:', error);
-      setLoading(false);
-    }
-  };
+    fetchScreenData();
+  }, [screenId]);
 
+  // Medya döngüsü
   useEffect(() => {
-    if (medias.length > 0) {
-      const interval = setInterval(() => {
-        setCurrentIndex((prevIndex) => 
-          prevIndex === medias.length - 1 ? 0 : prevIndex + 1
+    if (currentPlaylist && currentPlaylist.mediaItems && currentPlaylist.mediaItems.length > 0) {
+      const currentMedia = currentPlaylist.mediaItems[currentMediaIndex];
+      
+      const timer = setTimeout(() => {
+        setCurrentMediaIndex((prevIndex) => 
+          (prevIndex + 1) % currentPlaylist.mediaItems.length
         );
-      }, medias[currentIndex]?.duration * 1000 || 5000);
+      }, (currentMedia.duration || 5) * 1000);
 
-      return () => clearInterval(interval);
+      return () => clearTimeout(timer);
     }
-  }, [currentIndex, medias]);
+  }, [currentPlaylist, currentMediaIndex]);
 
   if (loading) {
     return <div>Yükleniyor...</div>;
   }
 
-  if (medias.length === 0) {
-    return <div>Gösterilecek medya bulunamadı.</div>;
+  if (error) {
+    return <div>Hata: {error}</div>;
   }
 
-  const currentMedia = medias[currentIndex];
+  if (!screen) {
+    return <div>Ekran bulunamadı</div>;
+  }
+
+  if (!currentPlaylist || !currentPlaylist.mediaItems || currentPlaylist.mediaItems.length === 0) {
+    return <div>Bu ekrana atanmış playlist bulunamadı veya playlist boş</div>;
+  }
+
+  const currentMedia = currentPlaylist.mediaItems[currentMediaIndex];
 
   return (
     <div style={styles.container}>
-      {currentMedia.mediaType === 'Video' ? (
-        <video
-          src={currentMedia.filePath}
-          style={styles.media}
-          autoPlay
-          muted
-          onEnded={() => {
-            setCurrentIndex((prevIndex) => 
-              prevIndex === medias.length - 1 ? 0 : prevIndex + 1
-            );
-          }}
-        />
-      ) : (
-        <img
-          src={currentMedia.filePath}
-          alt={currentMedia.name}
-          style={styles.media}
-        />
-      )}
+      <div style={styles.header}>
+        <h2>Ekran Önizleme: {screen.name}</h2>
+        <p>Playlist: {currentPlaylist.name}</p>
+      </div>
+      
+      <div style={styles.mediaContainer}>
+        {currentMedia.mediaType === 'Video' ? (
+          <video
+            key={currentMedia._id}
+            src={currentMedia.filePath}
+            style={styles.media}
+            autoPlay
+            muted
+            onEnded={() => {
+              setCurrentMediaIndex((prevIndex) => 
+                (prevIndex + 1) % currentPlaylist.mediaItems.length
+              );
+            }}
+          />
+        ) : (
+          <img
+            key={currentMedia._id}
+            src={currentMedia.filePath}
+            alt={currentMedia.name}
+            style={styles.media}
+          />
+        )}
+      </div>
+
+      <div style={styles.info}>
+        <p>Medya: {currentMedia.name}</p>
+        <p>Süre: {currentMedia.duration || 5} saniye</p>
+        <p>Tür: {currentMedia.mediaType}</p>
+      </div>
     </div>
   );
 }
@@ -73,14 +111,30 @@ const styles = {
     width: '100%',
     height: '100vh',
     display: 'flex',
+    flexDirection: 'column',
+    backgroundColor: '#000',
+    color: '#fff',
+  },
+  header: {
+    padding: '20px',
+    textAlign: 'center',
+  },
+  mediaContainer: {
+    flex: 1,
+    display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#000',
+    margin: '20px',
   },
   media: {
     maxWidth: '100%',
-    maxHeight: '100%',
+    maxHeight: 'calc(100vh - 200px)',
     objectFit: 'contain',
+  },
+  info: {
+    padding: '20px',
+    textAlign: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
 };
 

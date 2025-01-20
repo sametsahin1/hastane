@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import Notification from '../components/Notification';
+import { useNavigate } from 'react-router-dom';
 
 function AssignmentPage() {
   const [screens, setScreens] = useState([]);
@@ -8,6 +9,7 @@ function AssignmentPage() {
   const [selectedScreens, setSelectedScreens] = useState([]);
   const [selectedPlaylist, setSelectedPlaylist] = useState('');
   const [notification, setNotification] = useState('');
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchScreens();
@@ -108,6 +110,9 @@ function AssignmentPage() {
               style={styles.checkbox}
             />
             <label style={styles.label}>{screen.name}</label>
+            <button onClick={() => navigate(`/preview/${screen._id}`)}>
+              Önizleme
+            </button>
           </div>
         ))}
       </div>
