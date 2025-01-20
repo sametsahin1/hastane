@@ -52,10 +52,10 @@ function MediaPage() {
     formData.append('file', file);
     formData.append('name', mediaName);
     
-    // Dosya türünü kontrol et
-    const isImage = file.type.startsWith('image/');
-    const isVideo = file.type.startsWith('video/');
-    
+    // Dosya türünü doğru şekilde belirle
+    const mediaType = file.type.startsWith('image/') ? 'Resim' : 'Video';
+    formData.append('mediaType', mediaType);
+
     try {
       setLoading(true);
       const response = await axios.post('/api/media/upload', formData, {

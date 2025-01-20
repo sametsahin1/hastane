@@ -101,4 +101,26 @@ router.put('/:id', async (req, res) => {
   }
 });
 
+// Ekran detaylarını getir
+router.get('/:id', async (req, res) => {
+  try {
+    const screen = await Screen.findById(req.params.id)
+      .populate({
+        path: 'currentPlaylist',
+        populate: {
+          path: 'mediaItems',
+          model: 'Media'
+        }
+      });
+    
+    if (!screen) {
+      return res.status(404).json({ message: 'Ekran bulunamadı' });
+    }
+    
+    res.json(screen);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 module.exports = router;

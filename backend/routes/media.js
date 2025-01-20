@@ -56,19 +56,18 @@ router.post('/upload', upload.single('file'), async (req, res) => {
       return res.status(400).json({ message: 'Dosya yüklenemedi' });
     }
 
-    console.log('Yüklenen dosya:', req.file); // Debug için log
-    console.log('Dosya tipi:', req.fileType); // Debug için log
+    // Dosya tipini belirle
+    const mediaType = req.file.mimetype.startsWith('image/') ? 'Resim' : 'Video';
 
     const filePath = `/uploads/${req.file.filename}`;
     const media = new Media({
       name: req.body.name || req.file.originalname,
-      mediaType: req.fileType,
+      mediaType: mediaType,  // Otomatik belirlenen tip
       filePath: filePath,
       duration: req.body.duration || 5
     });
 
     const savedMedia = await media.save();
-    console.log('Kaydedilen medya:', savedMedia); // Debug için log
     res.status(201).json(savedMedia);
 
   } catch (error) {
@@ -76,7 +75,7 @@ router.post('/upload', upload.single('file'), async (req, res) => {
     res.status(500).json({ 
       message: 'Medya yüklenirken hata oluştu',
       error: error.message,
-      stack: error.stack // Debug için stack trace
+      stack: error.stack
     });
   }
 });

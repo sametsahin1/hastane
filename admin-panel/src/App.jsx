@@ -22,10 +22,26 @@ function App() {
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          
+          {/* Korumalı rotalar */}
           <Route path="/" element={
             <ProtectedRoute>
               <Layout>
                 <MediaPage />
+              </Layout>
+            </ProtectedRoute>
+          } />
+          <Route path="/playlists" element={
+            <ProtectedRoute>
+              <Layout>
+                <PlaylistPage />
+              </Layout>
+            </ProtectedRoute>
+          } />
+          <Route path="/screens" element={
+            <ProtectedRoute>
+              <Layout>
+                <ScreenPage />
               </Layout>
             </ProtectedRoute>
           } />
@@ -43,8 +59,6 @@ function App() {
               </Layout>
             </ProtectedRoute>
           } />
-          <Route path="/playlists" element={<PlaylistPage />} />
-          <Route path="/screens" element={<ScreenPage />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

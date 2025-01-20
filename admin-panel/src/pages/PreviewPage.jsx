@@ -5,102 +5,67 @@ import axios from 'axios';
 function PreviewPage() {
   const { screenId } = useParams();
   const [screen, setScreen] = useState(null);
-  const [currentPlaylist, setCurrentPlaylist] = useState(null);
   const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
-  // Ekran ve playlist bilgilerini al
   useEffect(() => {
-    const fetchScreenData = async () => {
+    const fetchScreen = async () => {
       try {
         const response = await axios.get(`/api/screens/${screenId}`);
         setScreen(response.data);
-        
-        if (response.data.currentPlaylist) {
-          const playlistResponse = await axios.get(`/api/playlists/${response.data.currentPlaylist}`);
-          setCurrentPlaylist(playlistResponse.data);
-        }
-        
         setLoading(false);
       } catch (error) {
         console.error('Ekran bilgileri alınırken hata:', error);
-        setError('Ekran bilgileri yüklenemedi');
         setLoading(false);
       }
     };
 
-    fetchScreenData();
+    fetchScreen();
   }, [screenId]);
 
-  // Medya döngüsü
   useEffect(() => {
-    if (currentPlaylist && currentPlaylist.mediaItems && currentPlaylist.mediaItems.length > 0) {
-      const currentMedia = currentPlaylist.mediaItems[currentMediaIndex];
-      
+    if (screen?.currentPlaylist?.mediaItems?.length > 0) {
+      const currentMedia = screen.currentPlaylist.mediaItems[currentMediaIndex];
       const timer = setTimeout(() => {
         setCurrentMediaIndex((prevIndex) => 
-          (prevIndex + 1) % currentPlaylist.mediaItems.length
+          (prevIndex + 1) % screen.currentPlaylist.mediaItems.length
         );
       }, (currentMedia.duration || 5) * 1000);
 
       return () => clearTimeout(timer);
     }
-  }, [currentPlaylist, currentMediaIndex]);
+  }, [screen, currentMediaIndex]);
 
-  if (loading) {
-    return <div>Yükleniyor...</div>;
+  if (loading) return <div>Yükleniyor...</div>;
+  if (!screen) return <div>Ekran bulunamadı</div>;
+  if (!screen.currentPlaylist?.mediaItems?.length) {
+    return <div>Bu ekrana atanmış medya bulunamadı</div>;
   }
 
-  if (error) {
-    return <div>Hata: {error}</div>;
-  }
-
-  if (!screen) {
-    return <div>Ekran bulunamadı</div>;
-  }
-
-  if (!currentPlaylist || !currentPlaylist.mediaItems || currentPlaylist.mediaItems.length === 0) {
-    return <div>Bu ekrana atanmış playlist bulunamadı veya playlist boş</div>;
-  }
-
-  const currentMedia = currentPlaylist.mediaItems[currentMediaIndex];
+  const currentMedia = screen.currentPlaylist.mediaItems[currentMediaIndex];
 
   return (
     <div style={styles.container}>
-      <div style={styles.header}>
-        <h2>Ekran Önizleme: {screen.name}</h2>
-        <p>Playlist: {currentPlaylist.name}</p>
-      </div>
-      
       <div style={styles.mediaContainer}>
         {currentMedia.mediaType === 'Video' ? (
           <video
-            key={currentMedia._id}
             src={currentMedia.filePath}
             style={styles.media}
             autoPlay
             muted
             onEnded={() => {
               setCurrentMediaIndex((prevIndex) => 
-                (prevIndex + 1) % currentPlaylist.mediaItems.length
+                (prevIndex + 1) % screen.currentPlaylist.mediaItems.length
               );
             }}
           />
         ) : (
           <img
-            key={currentMedia._id}
             src={currentMedia.filePath}
             alt={currentMedia.name}
             style={styles.media}
           />
         )}
-      </div>
-
-      <div style={styles.info}>
-        <p>Medya: {currentMedia.name}</p>
-        <p>Süre: {currentMedia.duration || 5} saniye</p>
-        <p>Tür: {currentMedia.mediaType}</p>
       </div>
     </div>
   );
@@ -108,33 +73,21 @@ function PreviewPage() {
 
 const styles = {
   container: {
-    width: '100%',
+    width: '100vw',
     height: '100vh',
-    display: 'flex',
-    flexDirection: 'column',
     backgroundColor: '#000',
-    color: '#fff',
-  },
-  header: {
-    padding: '20px',
-    textAlign: 'center',
   },
   mediaContainer: {
-    flex: 1,
+    width: '100%',
+    height: '100%',
     display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
-    margin: '20px',
   },
   media: {
     maxWidth: '100%',
-    maxHeight: 'calc(100vh - 200px)',
+    maxHeight: '100%',
     objectFit: 'contain',
-  },
-  info: {
-    padding: '20px',
-    textAlign: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
 };
 
