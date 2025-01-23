@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../api/axios';
 
 function PlaylistsPage() {
   const [playlists, setPlaylists] = useState([]);
@@ -7,6 +7,9 @@ function PlaylistsPage() {
   const [selectedMedias, setSelectedMedias] = useState([]);
   const [playlistName, setPlaylistName] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [mediaLoading, setMediaLoading] = useState(false);
+  const [mediaDurations, setMediaDurations] = useState({});
 
   useEffect(() => {
     fetchPlaylists();
@@ -15,19 +18,86 @@ function PlaylistsPage() {
 
   const fetchPlaylists = async () => {
     try {
-      const response = await axios.get('/api/playlists');
+      console.log('Fetching playlists...');
+      const response = await api.get('/api/playlists');
+      console.log('Playlists API Response:', {
+        status: response.status,
+        headers: response.headers,
+        data: response.data
+      });
+      
+      if (!response.data) {
+        console.warn('API yanıtında data yok');
+        setPlaylists([]);
+        return;
+      }
+
+      if (!Array.isArray(response.data)) {
+        console.warn('API yanıtı array değil:', response.data);
+        // Eğer response.data.playlists varsa ve array ise onu kullan
+        if (response.data.playlists && Array.isArray(response.data.playlists)) {
+          setPlaylists(response.data.playlists);
+        } else {
+          setPlaylists([]);
+        }
+        return;
+      }
+      
       setPlaylists(response.data);
+      setError(null);
     } catch (error) {
-      console.error('Playlist listesi alınırken hata:', error);
+      console.error('Playlist listesi alınırken hata:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        stack: error.stack
+      });
+      setError('Playlist listesi alınamadı: ' + error.message);
+      setPlaylists([]);
     }
   };
 
   const fetchMedias = async () => {
     try {
-      const response = await axios.get('/api/media');
-      setMedias(response.data);
+      setMediaLoading(true);
+      console.log('Fetching media...');
+      const response = await api.get('/api/media');
+      console.log('Media API Response:', {
+        status: response.status,
+        headers: response.headers,
+        data: response.data
+      });
+
+      // Yanıtın data kısmını kontrol et
+      if (!response.data) {
+        console.warn('API yanıtında data yok');
+        setMedias([]);
+        return;
+      }
+
+      // Eğer data bir array değilse ve data.medias bir array ise onu kullan
+      let mediaData = [];
+      if (Array.isArray(response.data)) {
+        mediaData = response.data;
+      } else if (response.data.medias && Array.isArray(response.data.medias)) {
+        mediaData = response.data.medias;
+      } else {
+        console.warn('API yanıtı geçersiz format:', response.data);
+        setMedias([]);
+        return;
+      }
+
+      setMedias(mediaData);
     } catch (error) {
-      console.error('Medya listesi alınırken hata:', error);
+      console.error('Medya listesi alınırken hata:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        stack: error.stack
+      });
+      setMedias([]);
+    } finally {
+      setMediaLoading(false);
     }
   };
 
@@ -35,11 +105,35 @@ function PlaylistsPage() {
     setSelectedMedias(prev => {
       const exists = prev.find(item => item.media === mediaId);
       if (exists) {
-        return prev.filter(item => item.media !== mediaId);
+        // Remove from selected medias
+        const newSelected = prev.filter(item => item.media !== mediaId);
+        // Also remove from durations
+        const newDurations = { ...mediaDurations };
+        delete newDurations[mediaId];
+        setMediaDurations(newDurations);
+        return newSelected;
       } else {
-        return [...prev, { media: mediaId, duration: 5 }];
+        // Add to selected medias with default or existing duration
+        return [...prev, { media: mediaId, duration: mediaDurations[mediaId] || 5 }];
       }
     });
+  };
+
+  const handleDurationChange = (mediaId, duration) => {
+    // Update durations state
+    setMediaDurations(prev => ({
+      ...prev,
+      [mediaId]: parseInt(duration) || 5
+    }));
+    
+    // Update selected medias with new duration
+    setSelectedMedias(prev => 
+      prev.map(item => 
+        item.media === mediaId 
+          ? { ...item, duration: parseInt(duration) || 5 }
+          : item
+      )
+    );
   };
 
   const handleCreatePlaylist = async () => {
@@ -50,16 +144,21 @@ function PlaylistsPage() {
 
     try {
       setLoading(true);
-      await axios.post('/api/playlists', {
+      const response = await api.post('/api/playlists', {
         name: playlistName,
         mediaItems: selectedMedias
       });
+      console.log('Create playlist response:', response.data);
       setPlaylistName('');
       setSelectedMedias([]);
       fetchPlaylists();
     } catch (error) {
-      console.error('Playlist oluşturma hatası:', error);
-      alert('Playlist oluşturulurken hata oluştu');
+      console.error('Playlist oluşturma hatası:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
+      alert('Playlist oluşturulurken hata oluştu: ' + (error.response?.data?.message || error.message));
     } finally {
       setLoading(false);
     }
@@ -67,11 +166,41 @@ function PlaylistsPage() {
 
   const handleDeletePlaylist = async (id) => {
     try {
-      await axios.delete(`/api/playlists/${id}`);
+      await api.delete(`/api/playlists/${id}`);
       fetchPlaylists();
     } catch (error) {
-      console.error('Playlist silme hatası:', error);
+      console.error('Playlist silme hatası:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
+      alert('Playlist silinirken hata oluştu: ' + (error.response?.data?.message || error.message));
     }
+  };
+
+  // Medya dosyasının yolunu düzenleyen yardımcı fonksiyon
+  const getMediaUrl = (filePath) => {
+    if (!filePath) return '';
+    
+    const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+    
+    // Eğer filePath tam URL ise olduğu gibi kullan
+    if (filePath.startsWith('http://') || filePath.startsWith('https://')) {
+      return filePath;
+    }
+    
+    // uploads/ ile başlayan yolları düzelt
+    if (filePath.startsWith('uploads/')) {
+      return `${baseURL}/${filePath}`;
+    }
+    
+    // /uploads/ ile başlayan yolları düzelt
+    if (filePath.startsWith('/uploads/')) {
+      return `${baseURL}${filePath}`;
+    }
+    
+    // Diğer durumlar için
+    return `${baseURL}/uploads/${filePath.replace(/^\/+/, '')}`;
   };
 
   const renderMediaItem = (mediaItem) => {
@@ -81,33 +210,159 @@ function PlaylistsPage() {
     }
 
     const { media } = mediaItem;
+    const mediaUrl = getMediaUrl(media.filePath);
 
     return (
-      <div key={mediaItem._id} className="media-item">
-        {media.mediaType === 'Video' ? (
-          <video
-            src={`https://yazilimservisi.com${media.filePath}`}
-            style={{ width: '200px', height: 'auto' }}
-            controls
-          />
-        ) : media.mediaType === 'Resim' ? (
-          <img
-            src={`https://yazilimservisi.com${media.filePath}`}
-            alt={media.name}
-            style={{ width: '200px', height: 'auto' }}
-          />
-        ) : (
-          <div>Desteklenmeyen medya tipi: {media.mediaType}</div>
-        )}
-        <div>{media.name}</div>
-        <div>Süre: {mediaItem.duration} saniye</div>
+      <tr key={mediaItem._id}>
+        <td style={styles.previewCell}>
+          {media.mediaType === 'Video' ? (
+            <video
+              src={mediaUrl}
+              style={styles.preview}
+              controls
+            />
+          ) : (
+            <img
+              src={mediaUrl}
+              alt={media.name}
+              style={styles.preview}
+            />
+          )}
+        </td>
+        <td>{media.name}</td>
+        <td>{media.mediaType}</td>
+        <td>{mediaItem.duration} saniye</td>
+      </tr>
+    );
+  };
+
+  const renderPlaylistItem = (playlist) => {
+    return (
+      <div key={playlist._id} style={styles.playlistItem}>
+        <div style={styles.playlistHeader}>
+          <h4>{playlist.name}</h4>
+          <button
+            onClick={() => handleDeletePlaylist(playlist._id)}
+            style={styles.deleteButton}
+          >
+            Sil
+          </button>
+        </div>
+        <table style={styles.mediaTable}>
+          <thead>
+            <tr>
+              <th>Önizleme</th>
+              <th>Ad</th>
+              <th>Tür</th>
+              <th>Süre</th>
+            </tr>
+          </thead>
+          <tbody>
+            {!Array.isArray(playlist.mediaItems) || playlist.mediaItems.length === 0 ? (
+              <tr>
+                <td colSpan="4" style={{ textAlign: 'center', padding: '10px' }}>
+                  Bu playlist'te henüz medya bulunmuyor
+                </td>
+              </tr>
+            ) : (
+              playlist.mediaItems.map(mediaItem => renderMediaItem(mediaItem))
+            )}
+          </tbody>
+        </table>
       </div>
+    );
+  };
+
+  const renderMediaGrid = () => {
+    if (mediaLoading) {
+      return (
+        <div style={{ textAlign: 'center', width: '100%', padding: '20px' }}>
+          Medyalar yükleniyor...
+        </div>
+      );
+    }
+
+    const mediaArray = Array.isArray(medias) ? medias : [];
+    
+    if (mediaArray.length === 0) {
+      return (
+        <div style={{ textAlign: 'center', width: '100%', padding: '20px' }}>
+          Henüz medya bulunmuyor
+        </div>
+      );
+    }
+
+    return (
+      <table style={styles.mediaTable}>
+        <thead>
+          <tr>
+            <th>Önizleme</th>
+            <th>Ad</th>
+            <th>Tür</th>
+            <th>Süre (saniye)</th>
+            <th>İşlemler</th>
+          </tr>
+        </thead>
+        <tbody>
+          {mediaArray.map((media) => {
+            const isSelected = selectedMedias.find(item => item.media === media._id);
+            return (
+              <tr key={media._id}>
+                <td style={styles.previewCell}>
+                  {media.mediaType === 'Video' ? (
+                    <video
+                      src={getMediaUrl(media.filePath)}
+                      style={styles.preview}
+                      preload="metadata"
+                    />
+                  ) : (
+                    <img
+                      src={getMediaUrl(media.filePath)}
+                      alt={media.name}
+                      style={styles.preview}
+                    />
+                  )}
+                </td>
+                <td>{media.name}</td>
+                <td>{media.mediaType}</td>
+                <td style={styles.durationCell}>
+                  <input
+                    type="number"
+                    min="1"
+                    value={mediaDurations[media._id] || 5}
+                    onChange={(e) => handleDurationChange(media._id, e.target.value)}
+                    style={styles.durationInput}
+                    disabled={!isSelected}
+                  />
+                </td>
+                <td>
+                  <button
+                    onClick={() => handleMediaSelect(media._id)}
+                    style={{
+                      ...styles.selectButton,
+                      backgroundColor: isSelected ? '#28a745' : '#007bff'
+                    }}
+                  >
+                    {isSelected ? 'Seçildi' : 'Seç'}
+                  </button>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
     );
   };
 
   return (
     <div style={{ margin: '20px' }}>
       <h2>Playlist Yönetimi</h2>
+      
+      {error && (
+        <div style={{ color: 'red', marginBottom: '10px' }}>
+          {error}
+        </div>
+      )}
       
       <div style={styles.createForm}>
         <input
@@ -118,41 +373,15 @@ function PlaylistsPage() {
           style={styles.input}
         />
         <div style={styles.mediaGrid}>
-          {medias.map((media) => (
-            <div
-              key={media._id}
-              style={{
-                ...styles.mediaItem,
-                border: selectedMedias.find(item => item.media === media._id)
-                  ? '2px solid #007bff'
-                  : '1px solid #ddd'
-              }}
-              onClick={() => handleMediaSelect(media._id)}
-            >
-              {media.mediaType === 'Video' ? (
-                <video
-                  src={media.filePath}
-                  style={styles.preview}
-                  preload="metadata"
-                />
-              ) : (
-                <img
-                  src={media.filePath}
-                  alt={media.name}
-                  style={styles.preview}
-                />
-              )}
-              <div style={styles.mediaInfo}>
-                <span>{media.name}</span>
-                <span>{media.mediaType}</span>
-              </div>
-            </div>
-          ))}
+          {renderMediaGrid()}
         </div>
         <button
           onClick={handleCreatePlaylist}
           disabled={loading || !playlistName || selectedMedias.length === 0}
-          style={styles.button}
+          style={{
+            ...styles.button,
+            backgroundColor: loading || !playlistName || selectedMedias.length === 0 ? '#ccc' : '#007bff'
+          }}
         >
           {loading ? 'Oluşturuluyor...' : 'Playlist Oluştur'}
         </button>
@@ -160,20 +389,17 @@ function PlaylistsPage() {
 
       <h3>Playlist Listesi</h3>
       <div style={styles.playlistGrid}>
-        {playlists.map((playlist) => (
-          <div key={playlist._id} style={styles.playlistItem}>
-            <h4>{playlist.name}</h4>
-            <div className="media-items-container">
-              {playlist.mediaItems?.map(mediaItem => renderMediaItem(mediaItem))}
-            </div>
-            <button
-              onClick={() => handleDeletePlaylist(playlist._id)}
-              style={styles.deleteButton}
-            >
-              Sil
-            </button>
+        {!Array.isArray(playlists) ? (
+          <div style={{ textAlign: 'center', width: '100%', padding: '20px', color: 'red' }}>
+            Playlist listesi alınırken bir hata oluştu
           </div>
-        ))}
+        ) : playlists.length === 0 ? (
+          <div style={{ textAlign: 'center', width: '100%', padding: '20px' }}>
+            {error ? 'Hata oluştu' : 'Henüz playlist bulunmuyor'}
+          </div>
+        ) : (
+          playlists.map((playlist) => renderPlaylistItem(playlist))
+        )}
       </div>
     </div>
   );
@@ -264,6 +490,43 @@ const styles = {
     border: 'none',
     borderRadius: '4px',
     cursor: 'pointer'
+  },
+  mediaTable: {
+    width: '100%',
+    borderCollapse: 'collapse',
+    marginTop: '10px',
+    border: '1px solid #ddd'
+  },
+  previewCell: {
+    width: '120px',
+    padding: '5px',
+    textAlign: 'center'
+  },
+  selectButton: {
+    padding: '5px 10px',
+    color: 'white',
+    border: 'none',
+    borderRadius: '4px',
+    cursor: 'pointer'
+  },
+  playlistHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '10px'
+  },
+  durationCell: {
+    padding: '5px',
+    textAlign: 'center',
+    width: '120px'
+  },
+  durationInput: {
+    width: '80px',
+    marginBottom: '0px',
+    padding: '5px',
+    borderRadius: '4px',
+    border: '1px solid #ddd',
+    textAlign: 'center'
   }
 };
 

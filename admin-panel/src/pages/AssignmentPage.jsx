@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../api/axios';
 import Notification from '../components/Notification';
 import { useNavigate } from 'react-router-dom';
 
@@ -10,6 +10,7 @@ function AssignmentPage() {
   const [selectedPlaylist, setSelectedPlaylist] = useState('');
   const [loading, setLoading] = useState(false);
   const [notification, setNotification] = useState('');
+  const [error, setError] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -19,19 +20,59 @@ function AssignmentPage() {
 
   const fetchScreens = async () => {
     try {
-      const response = await axios.get('/api/screens');
-      setScreens(response.data);
+      console.log('Fetching screens...');
+      const response = await api.get('/api/screens');
+      console.log('Screens response:', response.data);
+      
+      // Ensure we always set an array
+      if (!response.data) {
+        setScreens([]);
+        return;
+      }
+      
+      // If it's already an array, use it; otherwise, try to handle it or default to empty array
+      const screensArray = Array.isArray(response.data) ? response.data : 
+                         (response.data.screens ? response.data.screens : []);
+      
+      setScreens(screensArray);
+      setError(null);
     } catch (error) {
-      console.error('Ekran listesi alınırken hata:', error);
+      console.error('Ekran listesi alınırken hata:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
+      setError('Ekran listesi alınamadı: ' + error.message);
+      setScreens([]);
     }
   };
 
   const fetchPlaylists = async () => {
     try {
-      const response = await axios.get('/api/playlists');
-      setPlaylists(response.data);
+      console.log('Fetching playlists...');
+      const response = await api.get('/api/playlists');
+      console.log('Playlists response:', response.data);
+      
+      // Ensure we always set an array
+      if (!response.data) {
+        setPlaylists([]);
+        return;
+      }
+      
+      // If it's already an array, use it; otherwise, try to handle it or default to empty array
+      const playlistArray = Array.isArray(response.data) ? response.data : 
+                          (response.data.playlists ? response.data.playlists : []);
+      
+      setPlaylists(playlistArray);
+      setError(null);
     } catch (error) {
-      console.error('Playlist listesi alınırken hata:', error);
+      console.error('Playlist listesi alınırken hata:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
+      setError('Playlist listesi alınamadı: ' + error.message);
+      setPlaylists([]);
     }
   };
 
@@ -55,26 +96,31 @@ function AssignmentPage() {
 
   const handleAssign = async () => {
     if (!selectedPlaylist || selectedScreens.length === 0) {
-      alert('Lütfen bir playlist ve en az bir ekran seçin');
+      setNotification('Lütfen bir playlist ve en az bir ekran seçin');
       return;
     }
 
     try {
       setLoading(true);
       const promises = selectedScreens.map(screenId =>
-        axios.put(`/api/screens/${screenId}`, {
+        api.put(`/api/screens/${screenId}`, {
           currentPlaylist: selectedPlaylist
         })
       );
 
       await Promise.all(promises);
-      alert('Atama başarıyla tamamlandı');
+      setNotification('Atama başarıyla tamamlandı');
       setSelectedScreens([]);
       setSelectedPlaylist('');
-      fetchScreens(); // Ekranları yenile
+      setError(null);
+      fetchScreens();
     } catch (error) {
-      console.error('Atama hatası:', error);
-      alert('Atama yapılırken bir hata oluştu');
+      console.error('Atama hatası:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
+      setError('Atama yapılırken hata oluştu: ' + (error.response?.data?.message || error.message));
     } finally {
       setLoading(false);
     }
@@ -83,6 +129,12 @@ function AssignmentPage() {
   return (
     <div style={{ margin: '20px' }}>
       <h2>Playlist Atama</h2>
+      
+      {error && (
+        <div style={{ color: 'red', marginBottom: '10px' }}>
+          {error}
+        </div>
+      )}
       
       <div style={styles.container}>
         <div style={styles.section}>
@@ -93,7 +145,7 @@ function AssignmentPage() {
             style={styles.select}
           >
             <option value="">Playlist seçin...</option>
-            {playlists.map(playlist => (
+            {Array.isArray(playlists) && playlists.map(playlist => (
               <option key={playlist._id} value={playlist._id}>
                 {playlist.name}
               </option>
@@ -106,34 +158,41 @@ function AssignmentPage() {
           <button
             onClick={handleSelectAllScreens}
             style={styles.button}
+            disabled={!Array.isArray(screens) || screens.length === 0}
           >
             {selectedScreens.length === screens.length ? 'Tümünü Kaldır' : 'Tümünü Seç'}
           </button>
           
           <div style={styles.screenGrid}>
-            {screens.map(screen => (
-              <div
-                key={screen._id}
-                style={{
-                  ...styles.screenItem,
-                  backgroundColor: selectedScreens.includes(screen._id) ? '#e3f2fd' : 'white'
-                }}
-                onClick={() => handleScreenSelect(screen._id)}
-              >
-                <input
-                  type="checkbox"
-                  checked={selectedScreens.includes(screen._id)}
-                  onChange={() => {}} // React controlled component için
-                  style={styles.checkbox}
-                />
-                <span style={styles.screenName}>{screen.name}</span>
-                {screen.currentPlaylist && (
-                  <span style={styles.currentPlaylist}>
-                    Mevcut Playlist: {playlists.find(p => p._id === screen.currentPlaylist)?.name || 'Bulunamadı'}
-                  </span>
-                )}
+            {!Array.isArray(screens) || screens.length === 0 ? (
+              <div style={{ textAlign: 'center', width: '100%', padding: '20px' }}>
+                {error ? 'Hata oluştu' : 'Henüz ekran bulunmuyor'}
               </div>
-            ))}
+            ) : (
+              screens.map(screen => (
+                <div
+                  key={screen._id}
+                  style={{
+                    ...styles.screenItem,
+                    backgroundColor: selectedScreens.includes(screen._id) ? '#e3f2fd' : 'white'
+                  }}
+                  onClick={() => handleScreenSelect(screen._id)}
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedScreens.includes(screen._id)}
+                    onChange={() => {}} // React controlled component için
+                    style={styles.checkbox}
+                  />
+                  <span style={styles.screenName}>{screen.name}</span>
+                  {screen.currentPlaylist && (
+                    <span style={styles.currentPlaylist}>
+                      Mevcut Playlist: {playlists.find(p => p._id === screen.currentPlaylist)?.name || 'Bulunamadı'}
+                    </span>
+                  )}
+                </div>
+              ))
+            )}
           </div>
         </div>
 

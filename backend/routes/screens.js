@@ -2,6 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const Screen = require('../models/Screen');
+const Playlist = require('../models/Playlist');
 
 // GET - Tüm ekranları listele
 router.get('/', async (req, res) => {
@@ -36,24 +37,30 @@ router.post('/', async (req, res) => {
 // GET - Ekran konfigürasyonunu ve playlist detaylarını getir
 router.get('/:screenId/config', async (req, res) => {
   try {
+    console.log('Config isteği alındı, Screen ID:', req.params.screenId);
+    
     const screen = await Screen.findById(req.params.screenId)
       .populate({
         path: 'currentPlaylist',
         populate: {
-          path: 'medias.mediaId',
+          path: 'mediaItems.media',
           model: 'Media'
         }
       });
 
+    console.log('Bulunan ekran:', screen);
+
     if (!screen) {
+      console.log('Ekran bulunamadı');
       return res.status(404).json({ message: 'Ekran bulunamadı' });
     }
 
     if (!screen.currentPlaylist) {
+      console.log('Playlist bulunamadı');
       return res.status(404).json({ message: 'Bu ekrana atanmış playlist bulunamadı' });
     }
 
-    res.json({
+    const response = {
       screen: {
         id: screen._id,
         name: screen.name,
@@ -63,31 +70,25 @@ router.get('/:screenId/config', async (req, res) => {
       playlist: {
         id: screen.currentPlaylist._id,
         name: screen.currentPlaylist.name,
-        mediaItems: screen.currentPlaylist.medias.map(item => ({
-          id: item.mediaId._id,
-          mediaType: item.mediaId.mediaType,
-          filePath: item.mediaId.filePath,
-          duration: item.duration,
-          name: item.mediaId.name
+        mediaItems: screen.currentPlaylist.mediaItems.map(item => ({
+          id: item.media._id,
+          name: item.media.name,
+          mediaType: item.media.mediaType,
+          filePath: item.media.filePath,
+          duration: item.duration || 5
         }))
       }
-    });
-  } catch (error) {
-    console.error('Config error:', error);
-    res.status(500).json({ message: error.message });
-  }
-});
+    };
 
-// Ekran silme endpoint'i
-router.delete('/:id', async (req, res) => {
-  try {
-    const screen = await Screen.findByIdAndDelete(req.params.id);
-    if (!screen) {
-      return res.status(404).send({ message: 'Ekran bulunamadı' });
-    }
-    res.status(200).send({ message: 'Ekran başarıyla silindi' });
+    console.log('Gönderilen yanıt:', response);
+    res.json(response);
   } catch (error) {
-    res.status(500).send({ message: 'Ekran silinirken bir hata oluştu', error });
+    console.error('Config hatası:', error);
+    res.status(500).json({ 
+      message: 'Ekran konfigürasyonu alınırken hata oluştu',
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 });
 
@@ -122,6 +123,19 @@ router.put('/:id', async (req, res) => {
       message: 'Ekran güncellenirken hata oluştu',
       error: error.message 
     });
+  }
+});
+
+// DELETE - Ekran silme
+router.delete('/:id', async (req, res) => {
+  try {
+    const screen = await Screen.findByIdAndDelete(req.params.id);
+    if (!screen) {
+      return res.status(404).send({ message: 'Ekran bulunamadı' });
+    }
+    res.status(200).send({ message: 'Ekran başarıyla silindi' });
+  } catch (error) {
+    res.status(500).send({ message: 'Ekran silinirken bir hata oluştu', error });
   }
 });
 

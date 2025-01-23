@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import axios from 'axios';
+import api from '../api/axios';
 
 function PreviewPage() {
   const { screenId } = useParams();
@@ -9,11 +9,37 @@ function PreviewPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Medya dosyasının yolunu düzenleyen yardımcı fonksiyon
+  const getMediaUrl = (filePath) => {
+    if (!filePath) return '';
+    
+    const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+    
+    // Eğer filePath tam URL ise olduğu gibi kullan
+    if (filePath.startsWith('http://') || filePath.startsWith('https://')) {
+      return filePath;
+    }
+    
+    // uploads/ ile başlayan yolları düzelt
+    if (filePath.startsWith('uploads/')) {
+      return `${baseURL}/${filePath}`;
+    }
+    
+    // /uploads/ ile başlayan yolları düzelt
+    if (filePath.startsWith('/uploads/')) {
+      return `${baseURL}${filePath}`;
+    }
+    
+    // Diğer durumlar için
+    return `${baseURL}/uploads/${filePath.replace(/^\/+/, '')}`;
+  };
+
   useEffect(() => {
     const fetchScreen = async () => {
       try {
-        const response = await axios.get(`/api/screens/${screenId}`);
-        console.log('Screen data:', response.data); // Debug için log
+        console.log('Fetching screen config...');
+        const response = await api.get(`/api/screens/${screenId}/config`);
+        console.log('Screen config response:', response.data);
         setScreen(response.data);
         setLoading(false);
       } catch (error) {
@@ -27,11 +53,11 @@ function PreviewPage() {
   }, [screenId]);
 
   useEffect(() => {
-    if (screen?.currentPlaylist?.mediaItems?.length > 0) {
-      const currentMedia = screen.currentPlaylist.mediaItems[currentMediaIndex];
+    if (screen?.playlist?.mediaItems?.length > 0) {
+      const currentMedia = screen.playlist.mediaItems[currentMediaIndex];
       const timer = setTimeout(() => {
         setCurrentMediaIndex((prevIndex) => 
-          (prevIndex + 1) % screen.currentPlaylist.mediaItems.length
+          (prevIndex + 1) % screen.playlist.mediaItems.length
         );
       }, (currentMedia.duration || 5) * 1000);
 
@@ -42,30 +68,32 @@ function PreviewPage() {
   if (loading) return <div>Yükleniyor...</div>;
   if (error) return <div>Hata: {error}</div>;
   if (!screen) return <div>Ekran bulunamadı</div>;
-  if (!screen.currentPlaylist?.mediaItems?.length) {
+  if (!screen.playlist?.mediaItems?.length) {
     return <div>Bu ekrana atanmış medya bulunamadı</div>;
   }
 
-  const currentMedia = screen.currentPlaylist.mediaItems[currentMediaIndex].media;
+  const currentMedia = screen.playlist.mediaItems[currentMediaIndex];
 
   return (
     <div style={styles.container}>
       <div style={styles.mediaContainer}>
         {currentMedia.mediaType === 'Video' ? (
           <video
-            src={currentMedia.filePath}
+            key={currentMedia.id}
+            src={getMediaUrl(currentMedia.filePath)}
             style={styles.media}
             autoPlay
             muted
             onEnded={() => {
               setCurrentMediaIndex((prevIndex) => 
-                (prevIndex + 1) % screen.currentPlaylist.mediaItems.length
+                (prevIndex + 1) % screen.playlist.mediaItems.length
               );
             }}
           />
         ) : (
           <img
-            src={currentMedia.filePath}
+            key={currentMedia.id}
+            src={getMediaUrl(currentMedia.filePath)}
             alt={currentMedia.name}
             style={styles.media}
           />

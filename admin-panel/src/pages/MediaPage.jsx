@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../api/axios';
 
 function MediaPage() {
   const [file, setFile] = useState(null);
   const [mediaName, setMediaName] = useState('');
   const [medias, setMedias] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const fileInputRef = React.useRef(null);
 
   useEffect(() => {
@@ -14,10 +15,25 @@ function MediaPage() {
 
   const fetchMedias = async () => {
     try {
-      const response = await axios.get('/api/media');
-      setMedias(response.data);
+      console.log('Fetching media...');
+      const response = await api.get('/api/media');
+      console.log('Media API Response:', {
+        status: response.status,
+        headers: response.headers,
+        data: response.data
+      });
+      
+      const mediaArray = Array.isArray(response.data) ? response.data : [];
+      setMedias(mediaArray);
+      setError(null);
     } catch (error) {
-      console.error('Medya listesi alınırken hata:', error);
+      console.error('Medya listesi alınırken hata:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
+      setError('Medya listesi alınamadı: ' + error.message);
+      setMedias([]);
     }
   };
 
@@ -35,7 +51,7 @@ function MediaPage() {
 
   const handleDelete = async (id) => {
     try {
-      await axios.delete(`/api/media/${id}`);
+      await api.delete(`/api/media/${id}`);
       fetchMedias();
     } catch (error) {
       console.error('Silme hatası:', error);
@@ -54,7 +70,7 @@ function MediaPage() {
     
     try {
       setLoading(true);
-      const response = await axios.post('/api/media/upload', formData, {
+      const response = await api.post('/api/media/upload', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -71,29 +87,39 @@ function MediaPage() {
     }
   };
 
-  const MediaItem = ({ media }) => {
-    return media.mediaType === 'Video' ? (
-      <video 
-        src={media.filePath} 
-        style={{ width: '100px', height: '100px', objectFit: 'cover' }}
-        controls
-        preload="metadata"
-      >
-        <source src={media.filePath} type="video/mp4" />
-        Your browser does not support the video tag.
-      </video>
-    ) : (
-      <img 
-        src={media.filePath} 
-        alt={media.name}
-        style={{ width: '100px', height: '100px', objectFit: 'cover' }}
-      />
-    );
+  // Medya dosyasının yolunu düzenleyen yardımcı fonksiyon
+  const getMediaUrl = (filePath) => {
+    if (!filePath) return '';
+    
+    const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+    
+    // Eğer filePath tam URL ise olduğu gibi kullan
+    if (filePath.startsWith('http://') || filePath.startsWith('https://')) {
+      return filePath;
+    }
+    
+    // uploads/ ile başlayan yolları düzelt
+    if (filePath.startsWith('uploads/')) {
+      return `${baseURL}/${filePath}`;
+    }
+    
+    // /uploads/ ile başlayan yolları düzelt
+    if (filePath.startsWith('/uploads/')) {
+      return `${baseURL}${filePath}`;
+    }
+    
+    // Diğer durumlar için
+    return `${baseURL}/uploads/${filePath.replace(/^\/+/, '')}`;
   };
 
   return (
     <div style={{ margin: '20px' }}>
       <h2>Medya Yönetimi</h2>
+      {error && (
+        <div style={{ color: 'red', marginBottom: '10px' }}>
+          {error}
+        </div>
+      )}
       <div style={styles.uploadForm}>
         <input
           type="text"
@@ -136,24 +162,44 @@ function MediaPage() {
           </tr>
         </thead>
         <tbody>
-          {medias.map((media) => (
-            <tr key={media._id}>
-              <td style={styles.previewCell}>
-                <MediaItem media={media} />
-              </td>
-              <td>{media.name}</td>
-              <td>{media.mediaType}</td>
-              <td>{new Date(media.createdAt).toLocaleString()}</td>
-              <td>
-                <button 
-                  onClick={() => handleDelete(media._id)}
-                  className='deletebutton'
-                >
-                  Sil
-                </button>
+          {!Array.isArray(medias) || medias.length === 0 ? (
+            <tr>
+              <td colSpan="5" style={{ textAlign: 'center', padding: '20px' }}>
+                {error ? 'Hata oluştu' : 'Henüz medya bulunmuyor'}
               </td>
             </tr>
-          ))}
+          ) : (
+            medias.map(media => (
+              <tr key={media._id}>
+                <td style={styles.previewCell}>
+                  {media.mediaType === 'Video' ? (
+                    <video
+                      src={getMediaUrl(media.filePath)}
+                      style={styles.preview}
+                      controls
+                    />
+                  ) : (
+                    <img
+                      src={getMediaUrl(media.filePath)}
+                      alt={media.name}
+                      style={styles.preview}
+                    />
+                  )}
+                </td>
+                <td>{media.name}</td>
+                <td>{media.mediaType || 'Belirtilmemiş'}</td>
+                <td>{media.createdAt ? new Date(media.createdAt).toLocaleString() : 'Belirtilmemiş'}</td>
+                <td>
+                  <button
+                    onClick={() => handleDelete(media._id)}
+                    className='deletebutton'
+                  >
+                    Sil
+                  </button>
+                </td>
+              </tr>
+            ))
+          )}
         </tbody>
       </table>
     </div>
@@ -209,6 +255,17 @@ const styles = {
     border: 'none',
     borderRadius: '4px',
     cursor: 'pointer'
+  },
+  mediaItem: {
+    display: 'flex',
+    gap: '10px',
+    alignItems: 'center',
+    padding: '10px'
+  },
+  mediaInfo: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '5px'
   }
 };
 

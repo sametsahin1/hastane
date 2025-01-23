@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import api from '../api/axios';
 
 function LoginPage() {
   const [email, setEmail] = useState('');
@@ -12,7 +12,7 @@ function LoginPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post('/api/auth/login', {
+      const response = await api.post('/api/auth/login', {
         email,
         password
       });
@@ -23,7 +23,7 @@ function LoginPage() {
       // Auth durumunu güncelle
       setIsAuthenticated(true);
       
-      // Ana sayfaya yönlendir (artık /media değil, / olacak)
+      // Ana sayfaya yönlendir
       navigate('/');
     } catch (error) {
       console.error('Login error:', error);
