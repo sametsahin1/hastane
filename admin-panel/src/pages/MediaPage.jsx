@@ -240,12 +240,12 @@ const styles = {
   },
   previewCell: {
     width: '100px',
-    height: '100px',
+    height: '60px',
     padding: '5px'
   },
   preview: {
     width: '100px',
-    height: '100px',
+    height: '60px',
     objectFit: 'cover'
   },
   deleteButton: {

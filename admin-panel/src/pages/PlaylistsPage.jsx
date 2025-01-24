@@ -434,8 +434,8 @@ const styles = {
     alignItems: 'center'
   },
   preview: {
-    width: '100%',
-    height: '150px',
+    width: '107px',
+    height: '60px',
     objectFit: 'cover',
     borderRadius: '4px'
   },
@@ -454,17 +454,58 @@ const styles = {
   },
   playlistGrid: {
     display: 'flex',
-    flexWrap: 'wrap',
-    gap: '20px'
+    flexDirection: 'column',
+    gap: '20px',
+    width: '100%'
   },
   playlistItem: {
-    width: 'calc(33.33% - 20px)',
+    width: '100%',
     padding: '20px',
     border: '1px solid #ddd',
-    borderRadius: '4px',
+    borderRadius: '8px',
+    backgroundColor: '#fff',
+    boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+  },
+  playlistHeader: {
     display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center'
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '15px',
+    padding: '0 10px'
+  },
+  mediaTable: {
+    width: '100%',
+    borderCollapse: 'collapse',
+    marginTop: '10px',
+    border: '1px solid #eee',
+    borderRadius: '4px',
+    overflow: 'hidden'
+  },
+  previewCell: {
+    width: '120px',
+    padding: '10px',
+    textAlign: 'center',
+    borderBottom: '1px solid #eee'
+  },
+  preview: {
+    width: '107px',
+    height: '60px',
+    objectFit: 'cover',
+    borderRadius: '4px',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+  },
+  deleteButton: {
+    padding: '8px 16px',
+    backgroundColor: '#dc3545',
+    color: 'white',
+    border: 'none',
+    borderRadius: '4px',
+    cursor: 'pointer',
+    transition: 'background-color 0.2s',
+    fontSize: '14px',
+    ':hover': {
+      backgroundColor: '#c82333'
+    }
   },
   mediaPreview: {
     display: 'flex',
@@ -483,37 +524,12 @@ const styles = {
     objectFit: 'cover',
     borderRadius: '4px'
   },
-  deleteButton: {
-    padding: '5px 10px',
-    backgroundColor: '#dc3545',
-    color: 'white',
-    border: 'none',
-    borderRadius: '4px',
-    cursor: 'pointer'
-  },
-  mediaTable: {
-    width: '100%',
-    borderCollapse: 'collapse',
-    marginTop: '10px',
-    border: '1px solid #ddd'
-  },
-  previewCell: {
-    width: '120px',
-    padding: '5px',
-    textAlign: 'center'
-  },
   selectButton: {
     padding: '5px 10px',
     color: 'white',
     border: 'none',
     borderRadius: '4px',
     cursor: 'pointer'
-  },
-  playlistHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: '10px'
   },
   durationCell: {
     padding: '5px',
