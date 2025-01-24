@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   mongo:
     image: mongo:latest
@@ -34,10 +36,8 @@ services:
     build:
       context: ./admin-panel
       dockerfile: Dockerfile
-    environment:
-      - VITE_API_URL=https://yazilimservisi.com
     ports:
-      - "80:80"
+      - "8080:80"
     depends_on:
       - backend
     networks:
