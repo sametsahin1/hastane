@@ -91,7 +91,7 @@ function MediaPage() {
   const getMediaUrl = (filePath) => {
     if (!filePath) return '';
     
-    const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+    const baseURL = import.meta.env.VITE_API_URL;
     
     // Eğer filePath tam URL ise olduğu gibi kullan
     if (filePath.startsWith('http://') || filePath.startsWith('https://')) {
