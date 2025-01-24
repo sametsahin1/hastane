@@ -1,7 +1,7 @@
 import axios from 'axios';
 
-// Environment variable'dan API URL'ini al, yoksa localhost'u kullan
-const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+// Environment variable'dan API URL'ini al
+const baseURL = import.meta.env.VITE_API_URL;
 
 console.log('API Base URL:', baseURL); // Debug için
 

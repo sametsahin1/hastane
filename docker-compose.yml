@@ -40,6 +40,8 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8080:80"
+    environment:
+      - VITE_API_URL=https://yazilimservisi.com
     depends_on:
       - backend
     networks:
