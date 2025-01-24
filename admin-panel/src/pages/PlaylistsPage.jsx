@@ -182,7 +182,7 @@ function PlaylistsPage() {
   const getMediaUrl = (filePath) => {
     if (!filePath) return '';
     
-    const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+    const baseURL = import.meta.env.VITE_API_URL || '';
     
     // Eğer filePath tam URL ise olduğu gibi kullan
     if (filePath.startsWith('http://') || filePath.startsWith('https://')) {
@@ -191,16 +191,16 @@ function PlaylistsPage() {
     
     // uploads/ ile başlayan yolları düzelt
     if (filePath.startsWith('uploads/')) {
-      return `${baseURL}/${filePath}`;
+      return baseURL ? `${baseURL}/${filePath}` : `/${filePath}`;
     }
     
     // /uploads/ ile başlayan yolları düzelt
     if (filePath.startsWith('/uploads/')) {
-      return `${baseURL}${filePath}`;
+      return baseURL ? `${baseURL}${filePath}` : filePath;
     }
     
     // Diğer durumlar için
-    return `${baseURL}/uploads/${filePath.replace(/^\/+/, '')}`;
+    return baseURL ? `${baseURL}/uploads/${filePath.replace(/^\/+/, '')}` : `/uploads/${filePath.replace(/^\/+/, '')}`;
   };
 
   const renderMediaItem = (mediaItem) => {
