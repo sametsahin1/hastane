@@ -7,6 +7,8 @@ services:
     # Host'ta 27018'e map'liyoruz, sadece istersen kontrol/test amaçlı
     ports:
       - "27018:27017"
+    environment:
+      - VITE_API_URL=https://yazilimservisi.com/
     volumes:
       - mongodb_data:/data/db  # Veritabanı verilerini kalıcı hale getir
     networks:
