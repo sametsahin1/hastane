@@ -36,8 +36,10 @@ services:
     build:
       context: ./admin-panel
       dockerfile: Dockerfile
+    environment:
+      - VITE_API_URL=https://yazilimservisi.com
     ports:
-      - "8080:80"
+      - "80:80"
     depends_on:
       - backend
     networks:
