@@ -15,6 +15,8 @@ import com.google.gson.TypeAdapter
 import com.google.gson.stream.JsonReader
 import com.google.gson.stream.JsonWriter
 import com.example.hospitalscreenmanagement.data.model.Playlist
+import com.example.hospitalscreenmanagement.data.model.MediaItemInfo
+import com.example.hospitalscreenmanagement.data.model.Media
 
 object RetrofitClient {
     private const val BASE_URL = "https://yazilimservisi.com/"
@@ -62,19 +64,73 @@ object RetrofitClient {
             override fun read(input: JsonReader): Playlist? {
                 var id: String? = null
                 var name: String? = null
+                var createdAt: String? = null
+                var updatedAt: String? = null
+                var version: Int = 0
+                var mediaItems = mutableListOf<MediaItemInfo>()
                 
                 input.beginObject()
                 while (input.hasNext()) {
                     when (input.nextName()) {
                         "_id" -> id = input.nextString()
                         "name" -> name = input.nextString()
+                        "mediaItems" -> {
+                            input.beginArray()
+                            while (input.hasNext()) {
+                                input.beginObject()
+                                var mediaItemId: String? = null
+                                var duration: Int = 0
+                                var media: Media? = null
+                                
+                                while (input.hasNext()) {
+                                    when (input.nextName()) {
+                                        "_id" -> mediaItemId = input.nextString()
+                                        "duration" -> duration = input.nextInt()
+                                        "media" -> {
+                                            input.beginObject()
+                                            var mediaId: String? = null
+                                            var mediaName: String? = null
+                                            var mediaType: String? = null
+                                            var filePath: String? = null
+                                            var mediaDuration: Int = 0
+                                            
+                                            while (input.hasNext()) {
+                                                when (input.nextName()) {
+                                                    "_id" -> mediaId = input.nextString()
+                                                    "name" -> mediaName = input.nextString()
+                                                    "mediaType" -> mediaType = input.nextString()
+                                                    "filePath" -> filePath = input.nextString()
+                                                    "duration" -> mediaDuration = input.nextInt()
+                                                    else -> input.skipValue()
+                                                }
+                                            }
+                                            input.endObject()
+                                            
+                                            if (mediaId != null && mediaName != null && mediaType != null && filePath != null) {
+                                                media = Media(mediaId, mediaName, mediaType, filePath, mediaDuration)
+                                            }
+                                        }
+                                        else -> input.skipValue()
+                                    }
+                                }
+                                input.endObject()
+                                
+                                if (mediaItemId != null && media != null) {
+                                    mediaItems.add(MediaItemInfo(mediaItemId, media, duration))
+                                }
+                            }
+                            input.endArray()
+                        }
+                        "createdAt" -> createdAt = input.nextString()
+                        "updatedAt" -> updatedAt = input.nextString()
+                        "__v" -> version = input.nextInt()
                         else -> input.skipValue()
                     }
                 }
                 input.endObject()
                 
-                return if (id != null && name != null) {
-                    Playlist(id, name, emptyList())  // mediaItems için boş liste
+                return if (id != null && name != null && createdAt != null && updatedAt != null) {
+                    Playlist(id, name, mediaItems, createdAt, updatedAt, version)
                 } else {
                     null
                 }

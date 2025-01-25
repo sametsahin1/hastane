@@ -18,7 +18,7 @@ import kotlinx.coroutines.launch
 class ScreenSelectionActivity : AppCompatActivity() {
     private lateinit var binding: ActivityScreenSelectionBinding
     private val screenAdapter = ScreenAdapter { screen ->
-        navigateToPlayer(screen._id)
+        navigateToPlayer(screen.id)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {

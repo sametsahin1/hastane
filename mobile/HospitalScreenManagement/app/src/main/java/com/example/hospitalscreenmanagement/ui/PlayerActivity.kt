@@ -27,30 +27,45 @@ class PlayerActivity : AppCompatActivity() {
     private lateinit var binding: ActivityPlayerBinding
     private lateinit var videoView: VideoView
     private lateinit var imageView: ImageView
+
     private var currentMediaIndex = 0
     private var mediaItems: List<MediaItemInfo> = emptyList()
+
     private val handler = Handler(Looper.getMainLooper())
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        supportActionBar?.hide() // Action bar'ı gizle
         binding = ActivityPlayerBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        // View referanslarını alıyoruz
         videoView = binding.videoView
         imageView = binding.imageView
 
-        val screenId = intent.getStringExtra("SCREEN_ID") ?: return finish()
+        // SCREEN_ID null veya boş gelirse aktiviteyi sonlandır
+        val screenId = intent.getStringExtra("SCREEN_ID")
+        if (screenId.isNullOrEmpty()) {
+            finish()
+            return
+        }
+
+        // Ekran detaylarını yükle
         loadScreenDetails(screenId)
     }
 
+    /**
+     * Belirtilen screenId'ye göre ekran detaylarını Retrofit üzerinden çeker.
+     */
     private fun loadScreenDetails(screenId: String) {
         lifecycleScope.launch {
             try {
                 val response = RetrofitClient.apiService.getScreenDetails(screenId)
                 if (response.isSuccessful) {
                     Log.d("PlayerActivity", "Screen response: ${response.body()}")
-                    
+
                     response.body()?.let { screen ->
+                        // currentPlaylist null değilse medya listesini yükle
                         screen.currentPlaylist?.let { playlist ->
                             loadPlaylistMedia(playlist.id)
                         } ?: run {
@@ -70,16 +85,19 @@ class PlayerActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * Playlist ID'ye göre playlist detaylarını çeker ve MediaItem listesini alır.
+     */
     private suspend fun loadPlaylistMedia(playlistId: String) {
         try {
             val response = RetrofitClient.apiService.getPlaylistDetails(playlistId)
             if (response.isSuccessful) {
                 Log.d("PlayerActivity", "Playlist response: ${response.body()}")
-                
+
                 response.body()?.let { playlist ->
                     mediaItems = playlist.mediaItems
                     Log.d("PlayerActivity", "Media items: $mediaItems")
-                    
+
                     if (mediaItems.isNotEmpty()) {
                         startMediaPlayback()
                     } else {
@@ -98,81 +116,99 @@ class PlayerActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * Medya oynatmayı başlatır.
+     */
     private fun startMediaPlayback() {
+        // Listedeki ilk medyadan başlayarak oynat
         showCurrentMedia()
     }
 
+    /**
+     * Şu anki medyayı ekranda gösterir (Video veya Resim).
+     */
     private fun showCurrentMedia() {
         if (mediaItems.isEmpty()) return
 
         val mediaItem = mediaItems.getOrNull(currentMediaIndex) ?: return
-        val currentMedia = mediaItem.media ?: run {
-            Log.e("PlayerActivity", "Media bilgisi null: $mediaItem")
-            showError("Medya bilgisi bulunamadı")
-            return
-        }
+        val currentMedia = mediaItem.media
 
-        val duration = mediaItem.duration * 1000L // saniyeyi milisaniyeye çevir
+        // Süreyi milisaniyeye çevir (saniye * 1000)
+        val duration = mediaItem.duration * 1000L
 
         when (currentMedia.mediaType) {
             "Video" -> {
                 videoView.visibility = View.VISIBLE
                 imageView.visibility = View.GONE
-                
+
                 val videoUrl = "https://yazilimservisi.com${currentMedia.filePath}"
                 Log.d("PlayerActivity", "Video URL: $videoUrl")
-                
+
                 videoView.setVideoPath(videoUrl)
+
+                // Video hazır olduğunda oynat
                 videoView.setOnPreparedListener { mp ->
                     mp.isLooping = false
                     videoView.start()
                 }
-                videoView.setOnErrorListener { mp, what, extra ->
-                    Log.e("PlayerActivity", "Video yükleme hatası: what=$what, extra=$extra")
+
+                // Video yüklenemediğinde
+                videoView.setOnErrorListener { _, what, extra ->
+                    Log.e(
+                        "PlayerActivity",
+                        "Video yükleme hatası: what=$what, extra=$extra"
+                    )
                     showError("Video yüklenemedi")
                     showNextMedia()
                     true
                 }
+
+                // Video bitince sıradaki medyaya geç
                 videoView.setOnCompletionListener {
                     showNextMedia()
                 }
             }
+
             "Resim" -> {
                 videoView.visibility = View.GONE
                 imageView.visibility = View.VISIBLE
-                
+
                 val imageUrl = "https://yazilimservisi.com${currentMedia.filePath}"
                 Log.d("PlayerActivity", "Image URL: $imageUrl")
-                
+
+                val glideListener = object : RequestListener<Drawable> {
+                    override fun onLoadFailed(
+                        e: GlideException?,
+                        model: Any?,
+                        target: Target<Drawable>,
+                        isFirstResource: Boolean
+                    ): Boolean {
+                        Log.e("PlayerActivity", "Resim yükleme hatası", e)
+                        showError("Resim yüklenemedi")
+                        showNextMedia()
+                        return false
+                    }
+
+                    override fun onResourceReady(
+                        resource: Drawable,
+                        model: Any,
+                        target: Target<Drawable>,
+                        dataSource: DataSource,
+                        isFirstResource: Boolean
+                    ): Boolean {
+                        // Resim başarıyla yüklendiyse, belirtilen süre kadar bekleyip sonraki medyaya geç
+                        handler.postDelayed({ showNextMedia() }, duration)
+                        return false
+                    }
+                }
+
                 Glide.with(this)
                     .load(imageUrl)
-                    .error(R.drawable.error_image) // Hata durumunda gösterilecek resim
-                    .listener(object : RequestListener<Drawable> {
-                        override fun onLoadFailed(
-                            e: GlideException?,
-                            model: Any?,
-                            target: Target<Drawable>?,
-                            isFirstResource: Boolean
-                        ): Boolean {
-                            Log.e("PlayerActivity", "Resim yükleme hatası", e)
-                            showError("Resim yüklenemedi")
-                            showNextMedia()
-                            return false
-                        }
-
-                        override fun onResourceReady(
-                            resource: Drawable?,
-                            model: Any?,
-                            target: Target<Drawable>?,
-                            dataSource: DataSource?,
-                            isFirstResource: Boolean
-                        ): Boolean {
-                            handler.postDelayed({ showNextMedia() }, duration)
-                            return false
-                        }
-                    })
+                    .error(R.drawable.ic_error_image) // Bu drawable dosyanızda yoksa eklemeniz gerek
+                    .addListener(glideListener)
                     .into(imageView)
             }
+
             else -> {
                 Log.e("PlayerActivity", "Bilinmeyen medya tipi: ${currentMedia.mediaType}")
                 showNextMedia()
@@ -180,19 +216,38 @@ class PlayerActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * Bir sonraki medyaya geçiş yapar.
+     */
     private fun showNextMedia() {
-        handler.removeCallbacksAndMessages(null) // Önceki zamanlayıcıyı iptal et
+        // Daha önce beklemekte olan Runnable varsa iptal ediyoruz.
+        handler.removeCallbacksAndMessages(null)
+
+        // Döngüsel şekilde liste sonuna gelince başa dönmek için mod alarak index'i artırıyoruz
         currentMediaIndex = (currentMediaIndex + 1) % mediaItems.size
+
+        // Yeni medyayı göster
         showCurrentMedia()
     }
 
+    /**
+     * Kullanıcıya Toast ile hata mesajı gösterir.
+     */
     private fun showError(message: String) {
         Toast.makeText(this, message, Toast.LENGTH_LONG).show()
     }
 
+    /**
+     * Activity kapatılırken olası bellek sızıntısını önlemek için Handler ve VideoView temizle.
+     */
     override fun onDestroy() {
         super.onDestroy()
         handler.removeCallbacksAndMessages(null)
         videoView.stopPlayback()
     }
-} 
+
+    @Deprecated("Deprecated in Java")
+    override fun onBackPressed() {
+        onBackPressedDispatcher.onBackPressed()
+    }
+}

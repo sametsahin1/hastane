@@ -29,7 +29,7 @@ class ScreenAdapter(private val onScreenClick: (Screen) -> Unit) :
 
         fun bind(screen: Screen) {
             binding.textViewScreenName.text = screen.name
-            binding.textViewScreenLocation.text = screen.location ?: "Konum belirtilmemiş"
+            binding.textViewScreenLocation.text = screen.location
             binding.root.setOnClickListener { onScreenClick(screen) }
         }
     }
@@ -37,7 +37,7 @@ class ScreenAdapter(private val onScreenClick: (Screen) -> Unit) :
 
 class ScreenDiffCallback : DiffUtil.ItemCallback<Screen>() {
     override fun areItemsTheSame(oldItem: Screen, newItem: Screen): Boolean {
-        return oldItem._id == newItem._id
+        return oldItem.id == newItem.id
     }
 
     override fun areContentsTheSame(oldItem: Screen, newItem: Screen): Boolean {

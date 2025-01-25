@@ -10,5 +10,13 @@ data class Screen(
     val currentPlaylist: Playlist?,
     val createdAt: String,
     val updatedAt: String,
-    @SerializedName("__v") val version: Int = 0
+    @SerializedName("__v") val version: Int
+)
+
+data class MediaItem(
+    val _id: String,
+    val name: String,
+    val mediaType: String,
+    val filePath: String,
+    val duration: Int = 5
 ) 

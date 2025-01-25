@@ -23,6 +23,18 @@ class SettingsActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // Kayıtlı ekran ID'sini kontrol et
+        val prefs = getSharedPreferences("AppPrefs", MODE_PRIVATE)
+        val savedScreenId = prefs.getString("last_screen_id", null)
+        
+        if (savedScreenId != null) {
+            // Direkt PlayerActivity'yi başlat
+            startPlayerActivity(savedScreenId)
+            finish()
+            return
+        }
+
         setContentView(R.layout.activity_settings)
 
         spinnerScreens = findViewById(R.id.spinnerScreens)
@@ -53,13 +65,18 @@ class SettingsActivity : AppCompatActivity() {
         return ArrayAdapter(
             this,
             android.R.layout.simple_spinner_item,
-            items.map { it ?: "Bilinmeyen" } // null değerleri güvenli hale getir
+            items
         ).apply {
             setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         }
     }
 
     private fun startPlayerActivity(screenId: String) {
+        // Seçilen ekran ID'sini kaydet
+        getSharedPreferences("AppPrefs", MODE_PRIVATE).edit()
+            .putString("last_screen_id", screenId)
+            .apply()
+
         val intent = Intent(this, PlayerActivity::class.java).apply {
             putExtra("SCREEN_ID", screenId)
         }
