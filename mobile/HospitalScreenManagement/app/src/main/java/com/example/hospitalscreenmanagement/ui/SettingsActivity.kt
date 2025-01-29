@@ -123,4 +123,15 @@ class SettingsActivity : AppCompatActivity() {
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         spinnerScreens.adapter = adapter
     }
+
+    @Deprecated("Deprecated in Java")
+    override fun onBackPressed() {
+        // SharedPreferences'dan son ekran ID'sini temizle
+        getSharedPreferences("AppPrefs", MODE_PRIVATE).edit()
+            .remove("last_screen_id")
+            .apply()
+            
+        // Activity'yi sonlandır
+        finish()
+    }
 } 

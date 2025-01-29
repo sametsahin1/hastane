@@ -4,7 +4,7 @@ import com.google.gson.annotations.SerializedName
 
 data class MediaItemInfo(
     @SerializedName("_id") val id: String,
-    val media: Media,
+    val media: Media?,
     val duration: Int
 )
 

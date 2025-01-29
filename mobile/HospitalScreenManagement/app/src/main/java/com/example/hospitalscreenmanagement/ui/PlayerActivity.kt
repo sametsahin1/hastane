@@ -131,8 +131,14 @@ class PlayerActivity : AppCompatActivity() {
         if (mediaItems.isEmpty()) return
 
         val mediaItem = mediaItems.getOrNull(currentMediaIndex) ?: return
-        val currentMedia = mediaItem.media
+        
+        // Eğer media null ise, bir sonraki medyaya geç
+        if (mediaItem.media == null) {
+            handler.postDelayed({ showNextMedia() }, mediaItem.duration * 1000L)
+            return
+        }
 
+        val currentMedia = mediaItem.media
         // Süreyi milisaniyeye çevir (saniye * 1000)
         val duration = mediaItem.duration * 1000L
 
@@ -248,6 +254,12 @@ class PlayerActivity : AppCompatActivity() {
 
     @Deprecated("Deprecated in Java")
     override fun onBackPressed() {
-        onBackPressedDispatcher.onBackPressed()
+        // SharedPreferences'dan son ekran ID'sini temizle
+        getSharedPreferences("AppPrefs", MODE_PRIVATE).edit()
+            .remove("last_screen_id")
+            .apply()
+            
+        // Activity'yi sonlandır
+        finish()
     }
 }
