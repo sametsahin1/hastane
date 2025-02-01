@@ -22,6 +22,8 @@ import com.example.hospitalscreenmanagement.data.model.MediaItemInfo
 import com.example.hospitalscreenmanagement.data.model.Playlist
 import com.example.hospitalscreenmanagement.databinding.ActivityPlayerBinding
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 
 class PlayerActivity : AppCompatActivity() {
     private lateinit var binding: ActivityPlayerBinding
@@ -30,8 +32,11 @@ class PlayerActivity : AppCompatActivity() {
 
     private var currentMediaIndex = 0
     private var mediaItems: List<MediaItemInfo> = emptyList()
+    private var currentPlaylistId: String? = null
 
     private val handler = Handler(Looper.getMainLooper())
+    private var configCheckJob: Job? = null
+    private val CONFIG_CHECK_INTERVAL = 10000L // 10 saniyede bir kontrol et
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -50,8 +55,49 @@ class PlayerActivity : AppCompatActivity() {
             return
         }
 
-        // Ekran detaylarını yükle
+        // İlk yükleme
         loadScreenDetails(screenId)
+        
+        // Periyodik kontrol başlat
+        startConfigCheck(screenId)
+    }
+
+    private fun startConfigCheck(screenId: String) {
+        configCheckJob?.cancel() // Varolan job'ı iptal et
+        configCheckJob = lifecycleScope.launch {
+            while (true) {
+                delay(CONFIG_CHECK_INTERVAL)
+                checkForConfigChanges(screenId)
+            }
+        }
+    }
+
+    private suspend fun checkForConfigChanges(screenId: String) {
+        try {
+            val response = RetrofitClient.apiService.getScreenDetails(screenId)
+            if (response.isSuccessful) {
+                response.body()?.let { screen ->
+                    // Eğer playlist değiştiyse veya playlist boşsa
+                    if (screen.currentPlaylist?.id != currentPlaylistId) {
+                        Log.d("PlayerActivity", "Playlist değişikliği tespit edildi. Yeni playlist yükleniyor...")
+                        // Mevcut medya oynatmayı durdur
+                        handler.removeCallbacksAndMessages(null)
+                        videoView.stopPlayback()
+                        
+                        // Yeni playlist'i yükle
+                        screen.currentPlaylist?.let { playlist ->
+                            currentPlaylistId = playlist.id
+                            loadPlaylistMedia(playlist.id)
+                        } ?: run {
+                            showError("Bu ekrana atanmış playlist bulunamadı")
+                            finish()
+                        }
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("PlayerActivity", "Konfig kontrolü hatası", e)
+        }
     }
 
     /**
@@ -67,6 +113,7 @@ class PlayerActivity : AppCompatActivity() {
                     response.body()?.let { screen ->
                         // currentPlaylist null değilse medya listesini yükle
                         screen.currentPlaylist?.let { playlist ->
+                            currentPlaylistId = playlist.id
                             loadPlaylistMedia(playlist.id)
                         } ?: run {
                             showError("Bu ekrana atanmış playlist bulunamadı")
@@ -248,6 +295,7 @@ class PlayerActivity : AppCompatActivity() {
      */
     override fun onDestroy() {
         super.onDestroy()
+        configCheckJob?.cancel() // Periyodik kontrolü durdur
         handler.removeCallbacksAndMessages(null)
         videoView.stopPlayback()
     }

@@ -495,8 +495,10 @@ const styles = {
     boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
   },
   deleteButton: {
-    padding: '8px 16px',
-    backgroundColor: '#dc3545',
+    padding: 0,
+    color: 'white',
+    height: '2em',
+    width: '4em',    backgroundColor: '#dc3545',
     color: 'white',
     border: 'none',
     borderRadius: '4px',
@@ -525,7 +527,10 @@ const styles = {
     borderRadius: '4px'
   },
   selectButton: {
-    padding: '5px 10px',
+    padding: 0,
+    color: 'white',
+    height: '2em',
+    width: '4em',
     color: 'white',
     border: 'none',
     borderRadius: '4px',

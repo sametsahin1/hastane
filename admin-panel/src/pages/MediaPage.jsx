@@ -249,7 +249,10 @@ const styles = {
     objectFit: 'cover'
   },
   deleteButton: {
-    padding: '5px 10px',
+    padding: 0,
+    color: 'white',
+    height: '2em',
+    width: '4em',
     backgroundColor: '#dc3545',
     color: 'white',
     border: 'none',
